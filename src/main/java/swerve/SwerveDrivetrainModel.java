@@ -1,7 +1,10 @@
 package swerve;
 
+import com.pathplanner.lib.PathConstraints;
+import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
+import com.pathplanner.lib.PathPoint;
 import com.pathplanner.lib.commands.PPSwerveControllerCommand;
 
 import edu.wpi.first.math.VecBuilder;
@@ -11,6 +14,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -119,6 +123,20 @@ public class SwerveDrivetrainModel {
         }
     }
 
+    public void setModuleStates(SwerveInput input, Rotation2d desiredRotation,
+            boolean creep, boolean resetController) {
+        var driveProp = creep ? SwerveConstants.slowDriveProp
+                : SwerveConstants.fastDriveProp;
+        var modMaxSpeed = driveProp * SwerveConstants.maxSpeed;
+        input = handleStationary(input);
+        if (resetController)
+            holo.getThetaController().reset(getGyroHeading().getRadians());
+        var angularSpeed = holo.getThetaController().calculate(getGyroHeading().getRadians(),
+                desiredRotation.getRadians());
+        setModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(input.m_translationX * modMaxSpeed,
+                input.m_translationY * modMaxSpeed, angularSpeed, getGyroHeading()), false);
+    }
+
     public void setVoltageToZero() {
         for (int i = 0; i < NUM_MODULES; i++) {
             modules[i].setDriveVoltageForCharacterization(0);
@@ -127,6 +145,11 @@ public class SwerveDrivetrainModel {
 
     public Pose2d getPose() {
         return poseEstimator.getEstimatedPosition();
+    }
+
+    public ChassisSpeeds getSpeeds() {
+        return SwerveConstants.kinematics.toChassisSpeeds(getSwerveModuleStates());
+
     }
 
     public SwerveModulePosition[] getModulePositions() {
@@ -165,6 +188,25 @@ public class SwerveDrivetrainModel {
         return poseEstimator.getEstimatedPosition().getRotation();
     }
 
+    public Command createOnTheFlyPathCommand(Pose2d currPose, ChassisSpeeds currSpeeds, Pose2d endPose,
+            Rotation2d endHeading, double endVelocity, double autonMaxSpeed,
+            double autonMaxAccel, SwerveSubsystem m_drive) {
+        var overallVel = new Translation2d(currSpeeds.vxMetersPerSecond,
+                currSpeeds.vyMetersPerSecond).getNorm() + currSpeeds.omegaRadiansPerSecond;
+        var stillHeading = endPose.getTranslation().minus(currPose.getTranslation()).getAngle();
+        PathPoint startPoint = (overallVel <= 0.05)
+                ? new PathPoint(currPose.getTranslation(), stillHeading,
+                        currPose.getRotation())
+                : PathPoint.fromCurrentHolonomicState(currPose, currSpeeds);
+        PathPlannerTrajectory trajectory = PathPlanner.generatePath(new PathConstraints(autonMaxSpeed,
+                autonMaxAccel), startPoint,
+                new PathPoint(endPose.getTranslation(),
+                        endHeading,
+                        endPose.getRotation(),
+                        endVelocity));
+        return createCommandForTrajectory(trajectory, m_drive);
+    }
+
     public Command createCommandForTrajectory(PathPlannerTrajectory trajectory, SwerveSubsystem m_drive) {
         PPSwerveControllerCommand swerveControllerCommand = new PPSwerveControllerCommand(
                 trajectory,
@@ -177,7 +219,7 @@ public class SwerveDrivetrainModel {
                 new PIDController(SwerveConstants.autonSteerKP, 0, 0), // TODO FIGURE OUT WHILE CANT ACCEPT PROFILED PID
                 commandStates -> setModuleStates(commandStates, false),
                 m_drive);
-        return swerveControllerCommand.andThen(() -> setModuleStates(new SwerveInput(0, 0, 0), false, false));
+        return swerveControllerCommand.andThen(() -> setVoltageToZero());
     }
 
     public void goToPose(PathPlannerState state) {
