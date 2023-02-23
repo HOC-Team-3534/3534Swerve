@@ -136,7 +136,7 @@ public class SwerveDrivetrainModel {
         input = handleStationary(input);
         if (resetController)
             thetaController.reset(getGyroHeading().getRadians());
-        var angularSpeed = holo.getThetaController().calculate(getGyroHeading().getRadians(),
+        var angularSpeed = thetaController.calculate(getGyroHeading().getRadians(),
                 desiredRotation.getRadians());
         setModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(input.m_translationX * modMaxSpeed,
                 input.m_translationY * modMaxSpeed, angularSpeed, getGyroHeading()), false);
