@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 public class SwerveDrivetrainModel {
     public final static int NUM_MODULES = 4;
@@ -208,16 +209,12 @@ public class SwerveDrivetrainModel {
     }
 
     public Command createCommandForTrajectory(PathPlannerTrajectory trajectory, SwerveSubsystem m_drive) {
-        PPSwerveControllerCommand swerveControllerCommand = new PPSwerveControllerCommand(
+        SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
                 trajectory,
                 () -> getPose(), // Functional interface to feed supplier
                 SwerveConstants.kinematics,
 
-                // Position controllers
-                holo.getXController(),
-                holo.getYController(),
-                new PIDController(SwerveConstants.autonSteerKP, 0, 0), // TODO FIGURE OUT WHILE CANT ACCEPT PROFILED PID
-                commandStates -> setModuleStates(commandStates, false),
+                holo, commandStates -> setModuleStates(commandStates, false),
                 m_drive);
         return swerveControllerCommand.andThen(() -> setVoltageToZero());
     }
