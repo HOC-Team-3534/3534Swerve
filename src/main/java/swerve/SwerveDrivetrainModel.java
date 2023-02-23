@@ -34,6 +34,7 @@ public class SwerveDrivetrainModel {
     final SwerveDrivePoseEstimator poseEstimator;
     private static final SendableChooser<String> orientationChooser = new SendableChooser<>();
     final HolonomicDriveController holo;
+    final ProfiledPIDController thetaController;
     Rotation2d simGyroAngleCache = new Rotation2d();
 
     public SwerveDrivetrainModel(SwerveModule frontLeftModule,
@@ -58,14 +59,15 @@ public class SwerveDrivetrainModel {
                         SwerveConstants.modulePoseEstAngleStdDev.getRadians()),
                 VecBuilder.fill(SwerveConstants.visionPoseEstXStdDev, SwerveConstants.visionPoseEstYStdDev,
                         SwerveConstants.visionPoseEstAngleStdDev.getRadians()));
+        thetaController = new ProfiledPIDController(SwerveConstants.autonSteerKP,
+                0, 0,
+                new TrapezoidProfile.Constraints(SwerveConstants.robotMaxAngularVel,
+                        SwerveConstants.robotMaxAngularAccel));
         holo = new HolonomicDriveController(new PIDController(SwerveConstants.autonDriveKP,
                 0, 0),
                 new PIDController(SwerveConstants.autonDriveKP,
                         0, 0),
-                new ProfiledPIDController(SwerveConstants.autonSteerKP,
-                        0, 0,
-                        new TrapezoidProfile.Constraints(SwerveConstants.robotMaxAngularVel,
-                                SwerveConstants.robotMaxAngularAccel)));
+                thetaController);
         orientationChooser.setDefaultOption("Field Oriented", "Field Oriented");
         orientationChooser.addOption("Robot Oriented", "Robot Oriented");
         SmartDashboard.putData("Orientation Chooser", orientationChooser);
@@ -133,7 +135,7 @@ public class SwerveDrivetrainModel {
         var modMaxSpeed = driveProp * SwerveConstants.maxSpeed;
         input = handleStationary(input);
         if (resetController)
-            holo.getThetaController().reset(getGyroHeading().getRadians());
+            thetaController.reset(getGyroHeading().getRadians());
         var angularSpeed = holo.getThetaController().calculate(getGyroHeading().getRadians(),
                 desiredRotation.getRadians());
         setModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(input.m_translationX * modMaxSpeed,
