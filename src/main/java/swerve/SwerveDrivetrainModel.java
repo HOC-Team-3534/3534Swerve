@@ -111,12 +111,15 @@ public class SwerveDrivetrainModel {
 
     public void setModuleStates(ChassisSpeeds chassisSpeeds,
             boolean isOpenLoop) {
-        simGyroAngleCache = simGyroAngleCache.plus(new Rotation2d(chassisSpeeds.omegaRadiansPerSecond * 0.020));
         SwerveModuleState[] swerveModuleStates = SwerveConstants.kinematics.toSwerveModuleStates(chassisSpeeds);
         setModuleStates(swerveModuleStates, isOpenLoop);
     }
 
     private void setModuleStates(SwerveModuleState[] states, boolean isOpenLoop) {
+        if (RobotBase.isSimulation()) {
+            var chassisSpeeds = SwerveConstants.kinematics.toChassisSpeeds(states);
+            simGyroAngleCache = simGyroAngleCache.plus(new Rotation2d(chassisSpeeds.omegaRadiansPerSecond * 0.020));
+        }
         SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveConstants.maxSpeed);
         for (int i = 0; i < NUM_MODULES; i++) {
             modules[i].setDesiredState(states[i], isOpenLoop);
