@@ -177,12 +177,6 @@ public class SwerveDrivetrainModel {
         poseEstimator.resetPosition(getRawGyroHeading(), getModulePositions(), in);
     }
 
-    public void setKnownState(PathPlannerState initialState) {
-        Pose2d startingPose = new Pose2d(initialState.poseMeters.getTranslation(),
-                initialState.holonomicRotation);
-        setKnownPose(startingPose);
-    }
-
     private Rotation2d getRawGyroHeading() {
         if (RobotBase.isSimulation())
             return simGyroAngleCache;
@@ -193,32 +187,34 @@ public class SwerveDrivetrainModel {
         return poseEstimator.getEstimatedPosition().getRotation();
     }
 
-    public Command createOnTheFlyPathCommand(Pose2d currPose, ChassisSpeeds currSpeeds, Pose2d endPose,
+    public Command createOnTheFlyPathCommand(Pose2d endPose,
             Rotation2d endHeading, double endVelocity, double autonMaxSpeed,
             double autonMaxAccel, SwerveSubsystem m_drive) {
-        var xy_vel = new Translation2d(currSpeeds.vxMetersPerSecond,
-                currSpeeds.vyMetersPerSecond).getNorm();
-        var rot_vel = Math.abs(currSpeeds.omegaRadiansPerSecond);
-        var stillHeading = endPose.getTranslation().minus(currPose.getTranslation()).getAngle();
+        var xy_vel = new Translation2d(getSpeeds().vxMetersPerSecond,
+                getSpeeds().vyMetersPerSecond).getNorm();
+        var rot_vel = Math.abs(getSpeeds().omegaRadiansPerSecond);
+        var stillHeading = endPose.getTranslation().minus(getPose().getTranslation()).getAngle();
         PathPoint startPoint = (xy_vel <= 0.05 && rot_vel <= 0.02)
-                ? new PathPoint(currPose.getTranslation(), stillHeading,
-                        currPose.getRotation())
-                : PathPoint.fromCurrentHolonomicState(currPose, currSpeeds);
+                ? new PathPoint(getPose().getTranslation(), stillHeading,
+                        getPose().getRotation())
+                : PathPoint.fromCurrentHolonomicState(getPose(), getSpeeds());
         PathPlannerTrajectory trajectory = PathPlanner.generatePath(new PathConstraints(autonMaxSpeed,
                 autonMaxAccel), startPoint,
                 new PathPoint(endPose.getTranslation(),
                         endHeading,
                         endPose.getRotation(),
                         endVelocity));
-        return createCommandForTrajectory(trajectory, m_drive);
+        return createCommandForTrajectory(trajectory, m_drive, false);
     }
 
-    public Command createCommandForTrajectory(PathPlannerTrajectory trajectory, SwerveSubsystem m_drive) {
+    public Command createCommandForTrajectory(PathPlannerTrajectory trajectory, SwerveSubsystem m_drive,
+            boolean resetToInitial) {
+        if (resetToInitial)
+            setKnownPose(trajectory.getInitialHolonomicPose());
         SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
                 trajectory,
                 () -> getPose(), // Functional interface to feed supplier
                 SwerveConstants.kinematics,
-
                 holo, commandStates -> setModuleStates(commandStates, false),
                 m_drive);
         return swerveControllerCommand.andThen(() -> setVoltageToZero());
