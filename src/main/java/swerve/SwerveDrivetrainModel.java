@@ -204,18 +204,25 @@ public class SwerveDrivetrainModel {
                         endHeading,
                         endPose.getRotation(),
                         endVelocity));
-        return createCommandForTrajectory(trajectory, m_drive, false);
+        return createCommandForTrajectory(trajectory, m_drive, false, false);
+    }
+
+    private void resetHoloController() {
+        holo.getXController().reset();
+        holo.getYController().reset();
+        holo.getThetaController().reset(this.getGyroHeading().getRadians());
     }
 
     public Command createCommandForTrajectory(PathPlannerTrajectory trajectory, SwerveSubsystem m_drive,
-            boolean resetToInitial) {
+            boolean resetToInitial, boolean useAlliance) {
         if (resetToInitial)
             setKnownPose(trajectory.getInitialHolonomicPose());
-        SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
+        MyPPSwerveControllerCommand swerveControllerCommand = new MyPPSwerveControllerCommand(
                 trajectory,
                 () -> getPose(), // Functional interface to feed supplier
                 SwerveConstants.kinematics,
-                holo, commandStates -> setModuleStates(commandStates, false),
+                holo, () -> resetHoloController(),
+                commandStates -> setModuleStates(commandStates, false), useAlliance,
                 m_drive);
         return swerveControllerCommand.andThen(() -> setVoltageToZero());
     }
