@@ -196,10 +196,11 @@ public class SwerveDrivetrainModel {
     public Command createOnTheFlyPathCommand(Pose2d currPose, ChassisSpeeds currSpeeds, Pose2d endPose,
             Rotation2d endHeading, double endVelocity, double autonMaxSpeed,
             double autonMaxAccel, SwerveSubsystem m_drive) {
-        var overallVel = new Translation2d(currSpeeds.vxMetersPerSecond,
-                currSpeeds.vyMetersPerSecond).getNorm() + currSpeeds.omegaRadiansPerSecond;
+        var xy_vel = new Translation2d(currSpeeds.vxMetersPerSecond,
+                currSpeeds.vyMetersPerSecond).getNorm();
+        var rot_vel = Math.abs(currSpeeds.omegaRadiansPerSecond);
         var stillHeading = endPose.getTranslation().minus(currPose.getTranslation()).getAngle();
-        PathPoint startPoint = (overallVel <= 0.05)
+        PathPoint startPoint = (xy_vel <= 0.05 && rot_vel <= 0.02)
                 ? new PathPoint(currPose.getTranslation(), stillHeading,
                         currPose.getRotation())
                 : PathPoint.fromCurrentHolonomicState(currPose, currSpeeds);
