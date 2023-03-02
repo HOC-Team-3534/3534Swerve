@@ -39,13 +39,13 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the command to characterize the swerve drivetrain
      */
     public Command characterizeDrive(double quas_voltage, double quas_duration) {
-        return runOnce(this::characterizeDriveInit).andThen(run(() -> {
+        return runOnce(this::characterizeDriveInit).andThen(runEnd(() -> {
             timeCharacterizing += 0.020;
             characterizeDrive(timeCharacterizing * quas_voltage);
-        })).until(() -> timeCharacterizing >= quas_duration).andThen(runOnce(() -> {
+        }, () -> {
             dt.setVoltageToZero();
             printData();
-        }));
+        })).until(() -> timeCharacterizing >= quas_duration);
     }
 
     private void characterizeDriveInit() {
