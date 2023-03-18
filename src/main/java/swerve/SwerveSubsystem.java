@@ -6,7 +6,6 @@ package swerve;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -15,7 +14,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class SwerveSubsystem extends SubsystemBase {
-    public SwerveDrivetrainModel dt;
+    private SwerveDrivetrainModel dt;
     FeedForwardCharacterizationData characterizationData = new FeedForwardCharacterizationData();
     double timeCharacterizing;
 

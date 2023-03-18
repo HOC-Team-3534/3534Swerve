@@ -19,6 +19,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.interfaces.Gyro;
@@ -215,8 +216,15 @@ public class SwerveDrivetrainModel {
 
     public Command createCommandForTrajectory(PathPlannerTrajectory trajectory, SwerveSubsystem m_drive,
             boolean resetToInitial, boolean useAlliance) {
-        if (resetToInitial)
-            setKnownPose(trajectory.getInitialHolonomicPose());
+        if (resetToInitial) {
+            if (useAlliance) {
+                var initialState = PathPlannerTrajectory.transformStateForAlliance(trajectory.getInitialState(),
+                        DriverStation.getAlliance());
+                setKnownPose(new Pose2d(initialState.poseMeters.getTranslation(), initialState.holonomicRotation));
+            } else
+                setKnownPose(trajectory.getInitialHolonomicPose());
+        }
+
         MyPPSwerveControllerCommand swerveControllerCommand = new MyPPSwerveControllerCommand(
                 trajectory,
                 () -> getPose(), // Functional interface to feed supplier
