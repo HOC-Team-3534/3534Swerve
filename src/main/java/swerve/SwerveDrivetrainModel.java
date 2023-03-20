@@ -79,13 +79,11 @@ public class SwerveDrivetrainModel {
         poseEstimator.update(getRawGyroHeading(), getModulePositions());
     }
 
-    public void updateOdometryWithVision(Pose2d botPose, double latency) {
-        // Also apply vision measurements. We use 0.3 seconds in the past as an example
-        // -- on
-        // a real robot, this must be calculated based either on latency or timestamps.
-        poseEstimator.addVisionMeasurement(botPose, Timer.getFPGATimestamp() - latency); // TODO determine latency of
-                                                                                         // camera based on timestamps
-                                                                                         // or other
+    public void updateOdometryWithVision(Pose2d botPose, double timeValue, boolean isTimestamp) {
+        if (isTimestamp)
+            poseEstimator.addVisionMeasurement(botPose, timeValue);
+        else
+            poseEstimator.addVisionMeasurement(botPose, Timer.getFPGATimestamp() - timeValue);
     }
 
     public void setModuleStates(SwerveInput input, boolean creep,
