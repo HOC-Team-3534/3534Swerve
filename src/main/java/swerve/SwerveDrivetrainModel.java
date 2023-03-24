@@ -116,6 +116,10 @@ public class SwerveDrivetrainModel {
         setModuleStates(swerveModuleStates, isOpenLoop);
     }
 
+    private void setModuleStates(SwerveModuleState[] states) {
+        setModuleStates(states, false);
+    }
+
     private void setModuleStates(SwerveModuleState[] states, boolean isOpenLoop) {
         if (RobotBase.isSimulation()) {
             var chassisSpeeds = SwerveConstants.kinematics.toChassisSpeeds(states);
@@ -231,6 +235,14 @@ public class SwerveDrivetrainModel {
                 commandStates -> setModuleStates(commandStates, false), useAlliance,
                 m_drive);
         return swerveControllerCommand.andThen(() -> setVoltageToZero());
+    }
+
+    public Command alignWithPose(Pose2d endPose, Translation2d translationTolerance, Rotation2d rotationTolerance,
+            TrapezoidProfile.Constraints constraints, SwerveSubsystem m_drive) {
+        return new StraightToPoseCommand(endPose, constraints, this::getPose, SwerveConstants.kinematics, holo,
+                this::resetHoloController,
+                this::setModuleStates, translationTolerance, rotationTolerance,
+                m_drive);
     }
 
     public void goToPose(PathPlannerState state) {
