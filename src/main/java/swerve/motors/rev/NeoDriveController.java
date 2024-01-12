@@ -1,9 +1,10 @@
 package swerve.motors.rev;
 
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.SparkPIDController;
+import com.revrobotics.CANSparkBase.ControlType;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -13,7 +14,7 @@ import swerve.motors.IDriveController;
 public class NeoDriveController implements IDriveController {
     final CANSparkMax driveMotor;
     final RelativeEncoder driveEncoder;
-    final SparkMaxPIDController drivePID;
+    final SparkPIDController drivePID;
     final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(SwerveConstants.driveKS,
             SwerveConstants.driveKV,
             SwerveConstants.driveKA);
@@ -29,7 +30,7 @@ public class NeoDriveController implements IDriveController {
         driveMotor.restoreFactoryDefaults();
         driveMotor.setSmartCurrentLimit(SwerveConstants.driveContinuousCurrentLimit);
         driveMotor.setSecondaryCurrentLimit(SwerveConstants.drivePeakCurrentLimit);
-        driveMotor.setInverted(SwerveConstants.moduleConfiguration.driveMotorInvert);
+        driveMotor.setInverted(SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
         driveMotor.setIdleMode(SwerveConstants.driveIdleMode);
         driveMotor.setOpenLoopRampRate(SwerveConstants.openLoopRamp);
         driveMotor.setClosedLoopRampRate(SwerveConstants.closedLoopRamp);
@@ -69,7 +70,7 @@ public class NeoDriveController implements IDriveController {
 
     @Override
     public void setVoltage(double voltage) {
-        driveMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.driveMotorInvert) ? -1
+        driveMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
                 : 1));
     }
 }

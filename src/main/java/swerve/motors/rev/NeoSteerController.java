@@ -1,6 +1,7 @@
 package swerve.motors.rev;
 
-import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.RelativeEncoder;
@@ -15,12 +16,12 @@ public class NeoSteerController implements ISteerController {
     final CANSparkMax steerMotor;
     final RelativeEncoder steerEncoder;
     final SparkMaxPIDController steerPID;
-    final CANCoder absoluteEncoder;
+    final CANcoder absoluteEncoder;
     final Rotation2d angleOffset;
     Rotation2d lastAngle;
     private static final double SpeedNotChangeAngle = 0.05;
 
-    public NeoSteerController(CANSparkMax steerMotor, CANCoder absoluteEncoder,
+    public NeoSteerController(CANSparkMax steerMotor, CANcoder absoluteEncoder,
             Rotation2d angleOffset) {
         this.steerMotor = steerMotor;
         this.steerEncoder = steerMotor.getEncoder();
@@ -31,8 +32,7 @@ public class NeoSteerController implements ISteerController {
 
     @Override
     public void config() {
-        absoluteEncoder.configFactoryDefault();
-        absoluteEncoder.configAllSettings(SwerveConstants.swerveCanCoderConfig);
+        absoluteEncoder.getConfigurator().apply(SwerveConstants.swerveCanCoderConfig);
         steerMotor.restoreFactoryDefaults();
         steerMotor.setSmartCurrentLimit(SwerveConstants.angleContinuousCurrentLimit);
         steerMotor.setSecondaryCurrentLimit(SwerveConstants.anglePeakCurrentLimit);
@@ -53,7 +53,7 @@ public class NeoSteerController implements ISteerController {
     }
 
     Rotation2d getCanCoder() {
-        return Rotation2d.fromDegrees(absoluteEncoder.getAbsolutePosition());
+        return Rotation2d.fromDegrees(absoluteEncoder.getAbsolutePosition().getValueAsDouble());
     }
 
     @Override
@@ -81,7 +81,7 @@ public class NeoSteerController implements ISteerController {
 
     @Override
     public void setVoltage(double voltage) {
-        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert) ? -1
+        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
                 : 1));
     }
 }

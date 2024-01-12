@@ -1,13 +1,16 @@
 package swerve;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
-import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
-import com.ctre.phoenix.sensors.CANCoderConfiguration;
-import com.ctre.phoenix.sensors.SensorInitializationStrategy;
-import com.ctre.phoenix.sensors.SensorTimeBase;
-import com.revrobotics.CANSparkMax.IdleMode;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -30,11 +33,11 @@ public class SwerveConstants {
             visionPoseEstYStdDev = 0.01;
     public static Rotation2d modulePoseEstAngleStdDev = Rotation2d.fromDegrees(0.5);
     public static Rotation2d visionPoseEstAngleStdDev = Rotation2d.fromDegrees(5);
-    public static NeutralMode driveNeutralMode = NeutralMode.Brake,
-            angleNeutralMode = NeutralMode.Coast;
-    public static IdleMode driveIdleMode = (driveNeutralMode == NeutralMode.Brake) ? IdleMode.kBrake
+    public static NeutralModeValue driveNeutralMode = NeutralModeValue.Brake,
+            angleNeutralMode = NeutralModeValue.Coast;
+    public static IdleMode driveIdleMode = (driveNeutralMode == NeutralModeValue.Brake) ? IdleMode.kBrake
             : IdleMode.kCoast,
-            angleIdleMode = (angleNeutralMode == NeutralMode.Brake) ? IdleMode.kBrake
+            angleIdleMode = (angleNeutralMode == NeutralModeValue.Brake) ? IdleMode.kBrake
                     : IdleMode.kCoast;
     public static boolean angleEnableCurrentLimit = true,
             driveEnableCurrentLimit = true;
@@ -45,11 +48,9 @@ public class SwerveConstants {
     public static double anglePeakCurrentDuration = 0.1,
             drivePeakCurrentDuration = 0.1;
     public static double openLoopRamp = 0.25, closedLoopRamp = 0.0;
-    public static AbsoluteSensorRange absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
-    public static SensorInitializationStrategy absoluteInitStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
-    public static SensorTimeBase absoluteSensorTimeBase = SensorTimeBase.PerSecond;
+    public static AbsoluteSensorRangeValue absoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
     public static TalonFXConfiguration swerveDriveFXConfig, swerveAngleFXconfig;
-    public static CANCoderConfiguration swerveCanCoderConfig;
+    public static CANcoderConfiguration swerveCanCoderConfig;
 
     public static void fillNecessaryConstantsForFalcon(double maxSpeed_,
             double robotMaxAngularVel_,
@@ -87,27 +88,54 @@ public class SwerveConstants {
      * Must be called AFTER values have been set
      */
     public static void createSwerveConstants() {
+        /*
+         * Drive Motor Configuration
+         */
         swerveDriveFXConfig = new TalonFXConfiguration();
-        swerveDriveFXConfig.supplyCurrLimit = new SupplyCurrentLimitConfiguration(driveEnableCurrentLimit,
-                driveContinuousCurrentLimit,
-                drivePeakCurrentLimit,
-                drivePeakCurrentDuration);
-        swerveDriveFXConfig.slot0.kP = driveKP;
-        swerveDriveFXConfig.openloopRamp = openLoopRamp;
-        swerveDriveFXConfig.closedloopRamp = closedLoopRamp;
+
+        var motorOutputConfigs = new MotorOutputConfigs();
+        var currentLimitsConfig = new CurrentLimitsConfigs();
+        var slot0Configs = new Slot0Configs();
+        var openLoopRampsConfigs = new OpenLoopRampsConfigs();
+        var closedLoopRampConfigs = new ClosedLoopRampsConfigs();
+
+        motorOutputConfigs.withInverted(SwerveConstants.moduleConfiguration.driveMotorInvert).withNeutralMode(SwerveConstants.driveNeutralMode);
+        currentLimitsConfig.withSupplyCurrentLimitEnable(driveEnableCurrentLimit).withSupplyCurrentLimit(driveContinuousCurrentLimit).withSupplyCurrentThreshold(drivePeakCurrentLimit).withSupplyTimeThreshold(drivePeakCurrentDuration);
+        slot0Configs.withKP(driveKP);
+        openLoopRampsConfigs.withDutyCycleOpenLoopRampPeriod(openLoopRamp); // TODO check openLoopRamp and closedLoopRamp. Is time? or voltage?
+        closedLoopRampConfigs.withDutyCycleClosedLoopRampPeriod(closedLoopRamp);
+
+        swerveDriveFXConfig.withMotorOutput(motorOutputConfigs);
+        swerveDriveFXConfig.withCurrentLimits(currentLimitsConfig);
+        swerveDriveFXConfig.withSlot0(slot0Configs);
+        swerveDriveFXConfig.withOpenLoopRamps(openLoopRampsConfigs);
+        swerveDriveFXConfig.withClosedLoopRamps(closedLoopRampConfigs);
+
+        /*
+         * Steer Motor Configuration
+         */
         swerveAngleFXconfig = new TalonFXConfiguration();
-        swerveAngleFXconfig.supplyCurrLimit = new SupplyCurrentLimitConfiguration(angleEnableCurrentLimit,
-                angleContinuousCurrentLimit,
-                anglePeakCurrentLimit,
-                anglePeakCurrentDuration);
-        swerveAngleFXconfig.slot0.kP = moduleConfiguration.angleKP;
-        swerveAngleFXconfig.slot0.kI = moduleConfiguration.angleKI;
-        swerveAngleFXconfig.slot0.kD = moduleConfiguration.angleKD;
-        swerveAngleFXconfig.slot0.kF = moduleConfiguration.angleKF;
-        swerveCanCoderConfig = new CANCoderConfiguration();
-        swerveCanCoderConfig.absoluteSensorRange = absoluteSensorRange;
-        swerveCanCoderConfig.sensorDirection = moduleConfiguration.canCoderInvert;
-        swerveCanCoderConfig.initializationStrategy = absoluteInitStrategy;
-        swerveCanCoderConfig.sensorTimeBase = absoluteSensorTimeBase;
+
+        motorOutputConfigs = new MotorOutputConfigs();
+        currentLimitsConfig = new CurrentLimitsConfigs();
+        slot0Configs = new Slot0Configs();
+
+        motorOutputConfigs.withInverted(moduleConfiguration.angleMotorInvert).withNeutralMode(angleNeutralMode);
+        currentLimitsConfig.withSupplyCurrentLimitEnable(angleEnableCurrentLimit).withSupplyCurrentLimit(angleContinuousCurrentLimit).withSupplyCurrentThreshold(anglePeakCurrentLimit).withSupplyTimeThreshold(anglePeakCurrentDuration);
+        slot0Configs.withKP(moduleConfiguration.angleKP).withKI(moduleConfiguration.angleKI).withKD(moduleConfiguration.angleKD).withKS(moduleConfiguration.angleKS);
+
+        swerveAngleFXconfig.withCurrentLimits(currentLimitsConfig);
+        swerveAngleFXconfig.withSlot0(slot0Configs);
+
+        /*
+         * CANCoder Configuration
+         */
+        swerveCanCoderConfig = new CANcoderConfiguration();
+
+        var magnetSensorConfig = new MagnetSensorConfigs();
+
+        magnetSensorConfig.withAbsoluteSensorRange(absoluteSensorRange).withSensorDirection(moduleConfiguration.canCoderSensorDirection);
+
+        swerveCanCoderConfig.withMagnetSensor(magnetSensorConfig);
     }
 }

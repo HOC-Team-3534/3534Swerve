@@ -6,8 +6,8 @@ nativeUtils.withRoboRIO()
 nativeUtils {
   wpi {
     configureDependencies {
-      wpiVersion = "2023.+"
-      wpimathVersion = "2023.+"
+      wpiVersion = "2024.+"
+      wpimathVersion = "2024.+"
     }
   }
 }

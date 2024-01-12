@@ -1,7 +1,7 @@
 package swerve;
 
-import com.pathplanner.lib.PathPlannerTrajectory;
-import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
+import com.pathplanner.lib.path.PathPlannerTrajectory;
+import com.pathplanner.lib.path.PathPlannerTrajectory.State;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.server.PathPlannerServer;
 
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Custom PathPlanner version of SwerveControllerCommand */
-public class MyPPSwerveControllerCommand extends CommandBase {
+public class MyPPSwerveControllerCommand extends Command {
   private final Timer timer = new Timer();
   private final PathPlannerTrajectory trajectory;
   private final Supplier<Pose2d> poseSupplier;
@@ -30,9 +30,8 @@ public class MyPPSwerveControllerCommand extends CommandBase {
   private final HolonomicDriveController controller;
   private final Runnable resetController;
   private final Consumer<SwerveModuleState[]> outputModuleStates;
-  private final boolean useAllianceColor;
 
-  private PathPlannerTrajectory transformedTrajectory;
+  private com.pathplanner.lib.path.PathPlannerTrajectory transformedTrajectory;
 
   private static Consumer<PathPlannerTrajectory> logActiveTrajectory = null;
   private static Consumer<Pose2d> logTargetPose = null;
@@ -75,7 +74,6 @@ public class MyPPSwerveControllerCommand extends CommandBase {
       HolonomicDriveController controller,
       Runnable resetController,
       Consumer<SwerveModuleState[]> outputModuleStates,
-      boolean useAllianceColor,
       Subsystem... requirements) {
     this.trajectory = trajectory;
     this.poseSupplier = poseSupplier;
@@ -83,17 +81,8 @@ public class MyPPSwerveControllerCommand extends CommandBase {
     this.controller = controller;
     this.resetController = resetController;
     this.outputModuleStates = outputModuleStates;
-    this.useAllianceColor = useAllianceColor;
 
     addRequirements(requirements);
-
-    if (useAllianceColor && trajectory.fromGUI && trajectory.getInitialPose().getX() > 8.27) {
-      DriverStation.reportWarning(
-          "You have constructed a path following command that will automatically transform path states depending"
-              + " on the alliance color, however, it appears this path was created on the red side of the field"
-              + " instead of the blue side. This is likely an error.",
-          false);
-    }
   }
 
   /**
@@ -141,21 +130,14 @@ public class MyPPSwerveControllerCommand extends CommandBase {
 
   @Override
   public void initialize() {
-    if (useAllianceColor && trajectory.fromGUI) {
-      transformedTrajectory = PathPlannerTrajectory.transformTrajectoryForAlliance(
-          trajectory, DriverStation.getAlliance());
-    } else {
-      transformedTrajectory = trajectory;
-    }
-
     if (logActiveTrajectory != null) {
-      logActiveTrajectory.accept(transformedTrajectory);
+      logActiveTrajectory.accept(trajectory);
     }
 
     timer.reset();
     timer.start();
 
-    PathPlannerServer.sendActivePath(transformedTrajectory.getStates());
+    PathPlannerServer.sendActivePath(trajectory.getStates());
 
     resetController.run();
   }
@@ -163,29 +145,29 @@ public class MyPPSwerveControllerCommand extends CommandBase {
   @Override
   public void execute() {
     double currentTime = this.timer.get();
-    PathPlannerState desiredState = (PathPlannerState) transformedTrajectory.sample(currentTime);
+    State desiredState = (State) transformedTrajectory.sample(currentTime);
 
     Pose2d currentPose = this.poseSupplier.get();
 
     PathPlannerServer.sendPathFollowingData(
-        new Pose2d(desiredState.poseMeters.getTranslation(), desiredState.holonomicRotation),
+        desiredState.getTargetHolonomicPose(),
         currentPose);
 
-    ChassisSpeeds targetChassisSpeeds = this.controller.calculate(currentPose, desiredState,
-        desiredState.holonomicRotation);
+    ChassisSpeeds targetChassisSpeeds = this.controller.calculate(currentPose, desiredState.getDifferentialPose(),desiredState.velocityMps,
+        desiredState.targetHolonomicRotation);
 
     SwerveModuleState[] targetModuleStates = this.kinematics.toSwerveModuleStates(targetChassisSpeeds);
     this.outputModuleStates.accept(targetModuleStates);
 
     if (logTargetPose != null) {
       logTargetPose.accept(
-          new Pose2d(desiredState.poseMeters.getTranslation(), desiredState.holonomicRotation));
+          new Pose2d(desiredState.positionMeters, desiredState.targetHolonomicRotation));
     }
 
     if (logError != null) {
       logError.accept(
-          currentPose.getTranslation().minus(desiredState.poseMeters.getTranslation()),
-          currentPose.getRotation().minus(desiredState.holonomicRotation));
+          currentPose.getTranslation().minus(desiredState.positionMeters),
+          currentPose.getRotation().minus(desiredState.targetHolonomicRotation));
     }
 
     if (logSetpoint != null) {
@@ -198,7 +180,7 @@ public class MyPPSwerveControllerCommand extends CommandBase {
     this.timer.stop();
 
     if (interrupted
-        || Math.abs(transformedTrajectory.getEndState().velocityMetersPerSecond) < 0.1) {
+        || Math.abs(transformedTrajectory.getEndState().velocityMps) < 0.1) {
 
       this.outputModuleStates.accept(
           this.kinematics.toSwerveModuleStates(new ChassisSpeeds(0, 0, 0)));
