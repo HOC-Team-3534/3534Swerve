@@ -48,7 +48,7 @@ public class FalconDriveController implements IDriveController {
 
     @Override
     public double getVoltage() {
-        return driveMotor.getSupplyVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
+        return driveMotor.getMotorVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
                 : 1);
     }
 

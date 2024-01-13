@@ -33,29 +33,20 @@ public class CTREModuleState {
      * 
      * @return Closest angle within scope
      */
-    private static double placeInAppropriate0To360Scope(double scopeReference,
-            double newAngle) {
-        double lowerBound;
-        double upperBound;
-        double lowerOffset = scopeReference % 360;
-        if (lowerOffset >= 0) {
-            lowerBound = scopeReference - lowerOffset;
-            upperBound = scopeReference + (360 - lowerOffset);
-        } else {
-            upperBound = scopeReference - lowerOffset;
-            lowerBound = scopeReference - (360 + lowerOffset);
+    private static double placeInAppropriate0To360Scope(double scopeReference, double newAngle) {
+        scopeReference %= 360;
+        newAngle %= 360;
+    
+        double delta = newAngle - scopeReference;
+    
+        // Adjust delta to be within -180 to 180 degrees
+        if (delta > 180) {
+            delta -= 360;
+        } else if (delta < -180) {
+            delta += 360;
         }
-        while (newAngle < lowerBound) {
-            newAngle += 360;
-        }
-        while (newAngle > upperBound) {
-            newAngle -= 360;
-        }
-        if (newAngle - scopeReference > 180) {
-            newAngle -= 360;
-        } else if (newAngle - scopeReference < -180) {
-            newAngle += 360;
-        }
-        return newAngle;
+    
+        return scopeReference + delta;
     }
+    
 }

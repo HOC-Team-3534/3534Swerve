@@ -3,9 +3,9 @@ package swerve.motors.rev;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.SparkPIDController;
+import com.revrobotics.CANSparkBase.ControlType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -15,7 +15,7 @@ import swerve.motors.ISteerController;
 public class NeoSteerController implements ISteerController {
     final CANSparkMax steerMotor;
     final RelativeEncoder steerEncoder;
-    final SparkMaxPIDController steerPID;
+    final SparkPIDController steerPID;
     final CANcoder absoluteEncoder;
     final Rotation2d angleOffset;
     Rotation2d lastAngle;
@@ -36,7 +36,7 @@ public class NeoSteerController implements ISteerController {
         steerMotor.restoreFactoryDefaults();
         steerMotor.setSmartCurrentLimit(SwerveConstants.angleContinuousCurrentLimit);
         steerMotor.setSecondaryCurrentLimit(SwerveConstants.anglePeakCurrentLimit);
-        steerMotor.setInverted(SwerveConstants.moduleConfiguration.angleMotorInvert);
+        steerMotor.setInverted(SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
         steerMotor.setIdleMode(SwerveConstants.angleIdleMode);
         steerEncoder.setPositionConversionFactor(1 / SwerveConstants.moduleConfiguration.angleGearRatio * 360.0);
         steerEncoder.setVelocityConversionFactor(1 / SwerveConstants.moduleConfiguration.angleGearRatio * 360.0 / 60.0);

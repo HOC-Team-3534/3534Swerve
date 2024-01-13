@@ -3,8 +3,8 @@
 // the WPILib BSD license file in the root directory of this project.
 package swerve;
 
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
-import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -31,10 +31,10 @@ public class SwerveModule {
   private Rotation2d simAngleCache = Rotation2d.fromDegrees(0);
 
   enum ModuleType {
-    FalconFalconCanCoder,
-    FalconNEOCanCoder,
-    NEOFalconCanCoder,
-    NEONEOCanCoder,
+    FalconFalconCANcoder,
+    FalconNEOCANcoder,
+    NEOFalconCANcoder,
+    NEONEOCANcoder,
     Basic
   }
 
@@ -56,42 +56,42 @@ public class SwerveModule {
     moduleType = ModuleType.Basic;
   }
 
-  public SwerveModule(WPI_TalonFX driveMotor, WPI_TalonFX steerMotor,
-      CANCoder absoluteEncoder, Rotation2d angleOffset) {
+  public SwerveModule(TalonFX driveMotor, TalonFX steerMotor,
+      CANcoder absoluteEncoder, Rotation2d angleOffset) {
     m_driveController = new FalconDriveController(driveMotor);
     m_steerController = new FalconSteerController(steerMotor, absoluteEncoder,
         angleOffset);
     m_driveController.config();
     m_steerController.config();
-    moduleType = ModuleType.FalconFalconCanCoder;
+    moduleType = ModuleType.FalconFalconCANcoder;
   }
 
-  public SwerveModule(WPI_TalonFX driveMotor, CANSparkMax steerMotor,
-      CANCoder absoluteEncoder, Rotation2d angleOffset) {
+  public SwerveModule(TalonFX driveMotor, CANSparkMax steerMotor,
+      CANcoder absoluteEncoder, Rotation2d angleOffset) {
     m_driveController = new FalconDriveController(driveMotor);
     m_steerController = new NeoSteerController(steerMotor, absoluteEncoder, angleOffset);
     m_driveController.config();
     m_steerController.config();
-    moduleType = ModuleType.FalconNEOCanCoder;
+    moduleType = ModuleType.FalconNEOCANcoder;
   }
 
-  public SwerveModule(CANSparkMax driveMotor, WPI_TalonFX steerMotor,
-      CANCoder absoluteEncoder, Rotation2d angleOffset) {
+  public SwerveModule(CANSparkMax driveMotor, TalonFX steerMotor,
+      CANcoder absoluteEncoder, Rotation2d angleOffset) {
     m_driveController = new NeoDriveController(driveMotor);
     m_steerController = new FalconSteerController(steerMotor, absoluteEncoder,
         angleOffset);
     m_driveController.config();
     m_steerController.config();
-    moduleType = ModuleType.NEOFalconCanCoder;
+    moduleType = ModuleType.NEOFalconCANcoder;
   }
 
   public SwerveModule(CANSparkMax driveMotor, CANSparkMax steerMotor,
-      CANCoder absoluteEncoder, Rotation2d angleOffset) {
+      CANcoder absoluteEncoder, Rotation2d angleOffset) {
     m_driveController = new NeoDriveController(driveMotor);
     m_steerController = new NeoSteerController(steerMotor, absoluteEncoder, angleOffset);
     m_driveController.config();
     m_steerController.config();
-    moduleType = ModuleType.FalconNEOCanCoder;
+    moduleType = ModuleType.FalconNEOCANcoder;
   }
 
   /**
@@ -152,7 +152,7 @@ public class SwerveModule {
   public void setDriveVoltageForCharacterization(double voltage) {
     m_driveController.setVoltage(voltage);
     switch (moduleType) {
-      case FalconFalconCanCoder:
+      case FalconFalconCANcoder:
         // need to send more than 1% speed otherwise it wont set the angle b/c of the
         // nice
         // filter to reduce jittering, but it doesnt actually set the speed for drive

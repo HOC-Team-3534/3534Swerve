@@ -130,7 +130,7 @@ class PolynomialRegression {
 
     public double predict(double x) {
         double y = 0;
-        for (int i = 0; i < coefficients.numRows(); i++) {
+        for (int i = 0; i < coefficients.getNumRows(); i++) {
             y += coefficients.get(i) * Math.pow(x, i);
         }
         return y;
