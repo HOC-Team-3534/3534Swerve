@@ -137,6 +137,7 @@ class PolynomialRegression {
     }
 
     public double R2(double[] x, double[] y) {
+        
         double sst = 0, sse = 0, yMean = 0;
         for (int i = 0; i < y.length; i++) {
             yMean += y[i];
