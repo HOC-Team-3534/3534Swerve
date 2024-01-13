@@ -1,14 +1,11 @@
 package swerve;
 
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.controller.HolonomicDriveController;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,7 +13,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -29,19 +25,22 @@ public class SwerveDrivetrainModel {
     final Pigeon2 pigeon;
     final SwerveDrivePoseEstimator poseEstimator;
     private static final SendableChooser<String> orientationChooser = new SendableChooser<>();
-    final HolonomicDriveController holo;
-    final ProfiledPIDController thetaController;
     Rotation2d simGyroAngleCache = new Rotation2d();
 
     public SwerveDrivetrainModel(SwerveModule frontLeftModule,
             SwerveModule frontRightModule,
             SwerveModule backLeftModule,
-            SwerveModule backRighModule, Pigeon2 pigeon) {
+            SwerveModule backRighModule, Pigeon2 pigeon, SwerveSubsystem swerve) {
         modules[0] = frontLeftModule;
         modules[1] = frontRightModule;
         modules[2] = backLeftModule;
         modules[3] = backRighModule;
         this.pigeon = pigeon;
+
+        AutoBuilder.configureHolonomic(this::getPose, this::setKnownPose, this::getSpeeds,
+                (speeds) -> this.setModuleStates(speeds, false), SwerveConstants.holonomicPathFollowerConfig,
+                () -> false,
+                swerve);
         /*
          * Here we use SwerveDrivePoseEstimator so that we can fuse odometry
          * readings. The numbers used below are robot specific, and should be
@@ -55,15 +54,6 @@ public class SwerveDrivetrainModel {
                         SwerveConstants.modulePoseEstAngleStdDev.getRadians()),
                 VecBuilder.fill(SwerveConstants.visionPoseEstXStdDev, SwerveConstants.visionPoseEstYStdDev,
                         SwerveConstants.visionPoseEstAngleStdDev.getRadians()));
-        thetaController = new ProfiledPIDController(SwerveConstants.autonSteerKP,
-                0, 0,
-                new TrapezoidProfile.Constraints(SwerveConstants.robotMaxAngularVel,
-                        SwerveConstants.robotMaxAngularAccel));
-        holo = new HolonomicDriveController(new PIDController(SwerveConstants.autonDriveKP,
-                0, 0),
-                new PIDController(SwerveConstants.autonDriveKP,
-                        0, 0),
-                thetaController);
         orientationChooser.setDefaultOption("Field Oriented", "Field Oriented");
         orientationChooser.addOption("Robot Oriented", "Robot Oriented");
         SmartDashboard.putData("Orientation Chooser", orientationChooser);
@@ -122,20 +112,6 @@ public class SwerveDrivetrainModel {
         }
     }
 
-    public void setModuleStates(SwerveInput input, Rotation2d desiredRotation,
-            boolean creep, boolean resetController) {
-        var driveProp = creep ? SwerveConstants.slowDriveProp
-                : SwerveConstants.fastDriveProp;
-        var modMaxSpeed = driveProp * SwerveConstants.maxSpeed;
-        input = handleStationary(input);
-        if (resetController)
-            thetaController.reset(getGyroHeading().getRadians());
-        var angularSpeed = thetaController.calculate(getGyroHeading().getRadians(),
-                desiredRotation.getRadians());
-        setModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(input.m_translationX * modMaxSpeed,
-                input.m_translationY * modMaxSpeed, angularSpeed, getGyroHeading()), false);
-    }
-
     public void setVoltageToZero() {
         for (int i = 0; i < NUM_MODULES; i++) {
             modules[i].setDriveVoltageForCharacterization(0);
@@ -183,7 +159,8 @@ public class SwerveDrivetrainModel {
 
     public Command pathfindToPose(Pose2d endPose, double endVelocity, double autonMaxSpeed,
             double autonMaxAccel, double autonMaxAngSpeed, double autonMaxAngAccel) {
-        return AutoBuilder.pathfindToPose(endPose, new PathConstraints(autonMaxSpeed, autonMaxAccel, autonMaxAngSpeed, autonMaxAngAccel), endVelocity);
+        return AutoBuilder.pathfindToPose(endPose,
+                new PathConstraints(autonMaxSpeed, autonMaxAccel, autonMaxAngSpeed, autonMaxAngAccel), endVelocity);
     }
 
     public Command followPath(PathPlannerPath path) {

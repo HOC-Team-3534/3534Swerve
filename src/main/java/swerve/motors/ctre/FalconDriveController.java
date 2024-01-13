@@ -29,27 +29,31 @@ public class FalconDriveController implements IDriveController {
     @Override
     public double getVelocity() {
         var config = SwerveConstants.moduleConfiguration;
-        return Conversions.falconToMPS(driveMotor.getVelocity().getValueAsDouble(), config.wheelCircumference,
+        return Conversions.falconRotationsPerSecondToWheelMetersPerSecond(driveMotor.getVelocity().getValueAsDouble(),
+                config.wheelCircumference,
                 config.driveGearRatio);
     }
 
     @Override
     public double getDistance() {
         var config = SwerveConstants.moduleConfiguration;
-        return Conversions.falconToMeters(driveMotor.getPosition().getValueAsDouble(), config.wheelCircumference,
+        return Conversions.falconRotationsToWheelMeters(driveMotor.getPosition().getValueAsDouble(),
+                config.wheelCircumference,
                 config.driveGearRatio);
     }
 
     @Override
     public void setVoltage(double voltage) {
-        driveMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
-                : 1));
+        driveMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.driveMotorInvert
+                .equals(InvertedValue.CounterClockwise_Positive)) ? -1
+                        : 1));
     }
 
     @Override
     public double getVoltage() {
-        return driveMotor.getMotorVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
-                : 1);
+        return driveMotor.getMotorVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.driveMotorInvert
+                .equals(InvertedValue.CounterClockwise_Positive)) ? -1
+                        : 1);
     }
 
     @Override
@@ -59,9 +63,11 @@ public class FalconDriveController implements IDriveController {
             driveMotor.set(percentOutput);
         } else {
             var config = SwerveConstants.moduleConfiguration;
-            double velocity = Conversions.MPSToFalcon(desiredState.speedMetersPerSecond, config.wheelCircumference,
+            double velocity = Conversions.wheelMetersPerSecondToFalconRotationsPerSecond(
+                    desiredState.speedMetersPerSecond, config.wheelCircumference,
                     config.driveGearRatio);
-            driveMotor.setControl(new VelocityDutyCycle(velocity, 0, false, m_driveFeedforward.calculate(desiredState.speedMetersPerSecond), 0, true, false, false));
+            driveMotor.setControl(new VelocityDutyCycle(velocity, 0, false,
+                    m_driveFeedforward.calculate(desiredState.speedMetersPerSecond), 0, true, false, false));
         }
     }
 }

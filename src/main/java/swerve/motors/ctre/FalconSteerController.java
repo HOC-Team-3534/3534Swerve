@@ -1,5 +1,6 @@
 package swerve.motors.ctre;
 
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.controls.PositionDutyCycle;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -33,19 +34,20 @@ public class FalconSteerController implements ISteerController {
         absoluteEncoder.getConfigurator().apply(SwerveConstants.swerveCanCoderConfig);
 
         steerMotor.getConfigurator().apply(SwerveConstants.swerveAngleFXconfig);
-        
+
         resetToAbsolute();
         lastAngle = getAngle();
     }
 
     Rotation2d getCanCoder() {
-        return Rotation2d.fromDegrees(absoluteEncoder.getAbsolutePosition().getValueAsDouble());
+        return Rotation2d.fromRotations(absoluteEncoder.getAbsolutePosition().getValueAsDouble());
     }
 
     @Override
     public Rotation2d getAngle() {
-        return Rotation2d.fromDegrees(Conversions.falconToDegrees(steerMotor.getPosition().getValueAsDouble(),
-                SwerveConstants.moduleConfiguration.angleGearRatio));
+        return Rotation2d
+                .fromRotations(Conversions.falconRotationsToWheelRotations(steerMotor.getPosition().getValueAsDouble(),
+                        SwerveConstants.moduleConfiguration.angleGearRatio));
     }
 
     @Override
@@ -58,33 +60,38 @@ public class FalconSteerController implements ISteerController {
         } else {
             resetIteration = 0;
         }
-        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
-                : 1));
+        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert
+                .equals(InvertedValue.CounterClockwise_Positive)) ? -1
+                        : 1));
     }
 
     public void resetToAbsolute() {
-        double absolutePosition = Conversions.degreesToFalcon(getCanCoder().getDegrees() - angleOffset.getDegrees(),
+        double absolutePosition = Conversions.steerDegreesToFalconRotations(
+                getCanCoder().getDegrees() - angleOffset.getDegrees(),
                 SwerveConstants.moduleConfiguration.angleGearRatio);
         steerMotor.setPosition(absolutePosition);
     }
 
     @Override
     public Rotation2d getRate() {
-        return Rotation2d.fromDegrees(Conversions.falconToDegreesPerSecond(steerMotor.getVelocity().getValueAsDouble(),
-                SwerveConstants.moduleConfiguration.angleGearRatio));
+        return Rotation2d
+                .fromRotations(Conversions.falconRotationsToWheelRotations(steerMotor.getVelocity().getValueAsDouble(),
+                        SwerveConstants.moduleConfiguration.angleGearRatio));
     }
 
     @Override
     public double getVoltage() {
-        return steerMotor.getMotorVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
-                : 1);
+        return steerMotor.getMotorVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.angleMotorInvert
+                .equals(InvertedValue.CounterClockwise_Positive)) ? -1
+                        : 1);
     }
 
     @Override
     public void setAngle(SwerveModuleState desiredState) {
         Rotation2d angle = (Math.abs(desiredState.speedMetersPerSecond) <= SpeedNotChangeAngle) ? lastAngle
                 : desiredState.angle; // Prevent rotating module if speed is less then 1%. Prevents Jittering.
-        steerMotor.setControl(new PositionDutyCycle(Conversions.degreesToFalcon(angle.getDegrees(), SwerveConstants.moduleConfiguration.angleGearRatio)));
+        steerMotor.setControl(new PositionDutyCycle(Conversions.steerDegreesToFalconRotations(angle.getDegrees(),
+                SwerveConstants.moduleConfiguration.angleGearRatio)));
         lastAngle = angle;
     }
 }
