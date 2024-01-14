@@ -60,7 +60,7 @@ public class Conversions {
     }
 
     /**
-     * @param wheelRPS      Wheel Rotations per Second
+     * @param wheelMPS      Wheel Meters per Second
      * @param circumference Circumference of Wheel
      * @param gearRatio     Gear Ratio Between Falcon and Mechanism
      * 
