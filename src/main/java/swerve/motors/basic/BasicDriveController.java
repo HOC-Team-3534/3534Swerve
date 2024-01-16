@@ -13,10 +13,9 @@ public class BasicDriveController implements IDriveController {
     final Encoder driveEncoder;
     final int kEncoderResolution = 4096;
     double lastVoltage;
-    final PIDController m_drivePIDController = new PIDController(SwerveConstants.driveKP, 0, 0);
-    final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(SwerveConstants.driveKS,
-            SwerveConstants.driveKV,
-            SwerveConstants.driveKA);
+    final PIDController m_drivePIDController = new PIDController(SwerveConstants.driveSlotConfigs.kP, 0, 0);
+    final SimpleMotorFeedforward m_driveFeedforward = SwerveConstants
+            .SlotConfigs2SimpleMotorFeedForward(SwerveConstants.driveSlotConfigs);
 
     public BasicDriveController(MotorController driveMotor, Encoder driveEncoder) {
         this.driveMotor = driveMotor;
@@ -53,7 +52,7 @@ public class BasicDriveController implements IDriveController {
     @Override
     public void setSpeed(SwerveModuleState desiredState, boolean isOpenLoop) {
         if (isOpenLoop) {
-            double percentOutput = desiredState.speedMetersPerSecond / SwerveConstants.maxSpeed;
+            double percentOutput = desiredState.speedMetersPerSecond / SwerveConstants.maxKinematics.vel;
             driveMotor.setVoltage(percentOutput);
         } else {
             // Calculate the drive output from the drive PID controller.

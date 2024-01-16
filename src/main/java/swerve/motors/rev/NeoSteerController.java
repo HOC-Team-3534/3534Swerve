@@ -2,10 +2,12 @@ package swerve.motors.rev;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkBase.ControlType;
+import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -34,17 +36,21 @@ public class NeoSteerController implements ISteerController {
     public void config() {
         absoluteEncoder.getConfigurator().apply(SwerveConstants.swerveCanCoderConfig);
         steerMotor.restoreFactoryDefaults();
-        steerMotor.setSmartCurrentLimit(SwerveConstants.angleContinuousCurrentLimit);
-        steerMotor.setSecondaryCurrentLimit(SwerveConstants.anglePeakCurrentLimit);
-        steerMotor.setInverted(SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
-        steerMotor.setIdleMode(SwerveConstants.angleIdleMode);
+        var currentLimits = SwerveConstants.swerveCurrentLimitConfigs.steer;
+        steerMotor.setSmartCurrentLimit((int) currentLimits.SupplyCurrentLimit);
+        steerMotor.setSecondaryCurrentLimit((int) currentLimits.SupplyCurrentThreshold);
+        steerMotor.setInverted(
+                SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
+        steerMotor.setIdleMode((SwerveConstants.neutralModes.steer == NeutralModeValue.Brake) ? IdleMode.kBrake
+                : IdleMode.kCoast);
         steerEncoder.setPositionConversionFactor(1 / SwerveConstants.moduleConfiguration.angleGearRatio * 360.0);
         steerEncoder.setVelocityConversionFactor(1 / SwerveConstants.moduleConfiguration.angleGearRatio * 360.0 / 60.0);
         resetToAbsolute();
-        steerPID.setP(SwerveConstants.steerKP);
-        steerPID.setI(SwerveConstants.steerKI);
-        steerPID.setD(SwerveConstants.steerKD);
-        steerPID.setFF(SwerveConstants.steerKF);
+        var anglePID = SwerveConstants.moduleConfiguration.angleSlotConfigs;
+        steerPID.setP(anglePID.kP);
+        steerPID.setI(anglePID.kI);
+        steerPID.setD(anglePID.kD);
+        steerPID.setFF(anglePID.kS);
         lastAngle = getAngle();
     }
 
@@ -81,7 +87,8 @@ public class NeoSteerController implements ISteerController {
 
     @Override
     public void setVoltage(double voltage) {
-        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive)) ? -1
-                : 1));
+        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert
+                .equals(InvertedValue.CounterClockwise_Positive)) ? -1
+                        : 1));
     }
 }

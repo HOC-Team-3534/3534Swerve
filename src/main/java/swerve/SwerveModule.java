@@ -31,21 +31,21 @@ public class SwerveModule {
   private Rotation2d simAngleCache = Rotation2d.fromDegrees(0);
 
   enum ModuleType {
-    FalconFalconCANcoder,
-    FalconNEOCANcoder,
-    NEOFalconCANcoder,
-    NEONEOCANcoder,
-    Basic
+    FalconFalconCANcoder, FalconNEOCANcoder, NEOFalconCANcoder, NEONEOCANcoder, Basic
   }
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder
    * and turning encoder.
    *
-   * @param driveMotor     PWM drive motor
-   * @param turningMotor   PWM turning motor
-   * @param driveEncoder   DIO drive encoder
-   * @param turningEncoder DIO turning encoder
+   * @param driveMotor
+   *          PWM drive motor
+   * @param turningMotor
+   *          PWM turning motor
+   * @param driveEncoder
+   *          DIO drive encoder
+   * @param turningEncoder
+   *          DIO turning encoder
    */
   public SwerveModule(MotorController driveMotor, MotorController turningMotor,
       Encoder driveEncoder, Encoder turningEncoder) {
@@ -122,8 +122,10 @@ public class SwerveModule {
   /**
    * Sets the desired state for the module.
    *
-   * @param desiredState Desired state with speed and angle.
-   * @param isOpenLoop   use percent output instead of velocity control.
+   * @param desiredState
+   *          Desired state with speed and angle.
+   * @param isOpenLoop
+   *          use percent output instead of velocity control.
    */
   public void setDesiredState(SwerveModuleState desiredState,
       boolean isOpenLoop) {
@@ -147,7 +149,8 @@ public class SwerveModule {
   /**
    * Use for characterizing the drive only. Steer set to 0
    * 
-   * @param voltage the voltage to set the drive motor to
+   * @param voltage
+   *          the voltage to set the drive motor to
    */
   public void setDriveVoltageForCharacterization(double voltage) {
     m_driveController.setVoltage(voltage);
@@ -169,7 +172,8 @@ public class SwerveModule {
   /**
    * Use for characterizing a steering motor only. Drive set to 0
    * 
-   * @param voltage the voltage to set the steer motor to
+   * @param voltage
+   *          the voltage to set the steer motor to
    */
   public void setSteerVoltageForCharacterization(double voltage) {
     m_steerController.setVoltage(voltage);

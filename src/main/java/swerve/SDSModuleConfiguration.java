@@ -1,5 +1,6 @@
 package swerve;
 
+import com.ctre.phoenix6.configs.SlotConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
@@ -11,28 +12,20 @@ public class SDSModuleConfiguration {
     public final double wheelCircumference;
     public final double angleGearRatio;
     public final double driveGearRatio;
-    public final double angleKP;
-    public final double angleKI;
-    public final double angleKD;
-    public final double angleKS;
+    public final SlotConfigs angleSlotConfigs;
     public final InvertedValue driveMotorInvert;
     public final InvertedValue angleMotorInvert;
     public final SensorDirectionValue canCoderSensorDirection;
 
     public SDSModuleConfiguration(double wheelDiameter, double angleGearRatio,
-            double driveGearRatio, double angleKP,
-            double angleKI, double angleKD,
-            double angleKS, InvertedValue driveMotorInvert,
+            double driveGearRatio, SlotConfigs angleSlotConfigs, InvertedValue driveMotorInvert,
             InvertedValue angleMotorInvert,
             SensorDirectionValue canCoderSensorDirection) {
         this.wheelDiameter = wheelDiameter;
         this.wheelCircumference = wheelDiameter * Math.PI;
         this.angleGearRatio = angleGearRatio;
         this.driveGearRatio = driveGearRatio;
-        this.angleKP = angleKP;
-        this.angleKI = angleKI;
-        this.angleKD = angleKD;
-        this.angleKS = angleKS;
+        this.angleSlotConfigs = angleSlotConfigs;
         this.driveMotorInvert = driveMotorInvert;
         this.angleMotorInvert = angleMotorInvert;
         this.canCoderSensorDirection = canCoderSensorDirection;
@@ -43,16 +36,12 @@ public class SDSModuleConfiguration {
         double wheelDiameter = Units.inchesToMeters(4.0);
         /** 12.8 : 1 */
         double angleGearRatio = (12.8 / 1.0);
-        double angleKP = 0.2;
-        double angleKI = 0.0;
-        double angleKD = 0.0;
-        double angleKS = 0.0;
+        SlotConfigs angleSlotConfigs = (new SlotConfigs()).withKP(0.2);
         InvertedValue driveMotorInvert = InvertedValue.Clockwise_Positive;
         InvertedValue angleMotorInvert = InvertedValue.Clockwise_Positive;
         SensorDirectionValue canCoderSensorDirection = SensorDirectionValue.Clockwise_Positive;
         return new SDSModuleConfiguration(wheelDiameter, angleGearRatio,
-                driveGearRatio, angleKP, angleKI,
-                angleKD, angleKS, driveMotorInvert,
+                driveGearRatio, angleSlotConfigs, driveMotorInvert,
                 angleMotorInvert, canCoderSensorDirection);
     }
 
@@ -61,16 +50,12 @@ public class SDSModuleConfiguration {
         double wheelDiameter = Units.inchesToMeters(4.0);
         /** 12.8 : 1 */
         double angleGearRatio = (12.8 / 1.0);
-        double angleKP = 0.2;
-        double angleKI = 0.0;
-        double angleKD = 0.0;
-        double angleKS = 0.0;
+        SlotConfigs angleSlotConfigs = (new SlotConfigs()).withKP(0.2);
         InvertedValue driveMotorInvert = InvertedValue.Clockwise_Positive;
         InvertedValue angleMotorInvert = InvertedValue.Clockwise_Positive;
         SensorDirectionValue canCoderSensorDirection = SensorDirectionValue.Clockwise_Positive;
         return new SDSModuleConfiguration(wheelDiameter, angleGearRatio,
-                driveGearRatio, angleKP, angleKI,
-                angleKD, angleKS, driveMotorInvert,
+                driveGearRatio, angleSlotConfigs, driveMotorInvert,
                 angleMotorInvert, canCoderSensorDirection);
     }
 
@@ -79,16 +64,12 @@ public class SDSModuleConfiguration {
         double wheelDiameter = Units.inchesToMeters(4.0);
         /** (150 / 7) : 1 */
         double angleGearRatio = ((150.0 / 7.0) / 1.0);
-        double angleKP = 0.3;
-        double angleKI = 0.0;
-        double angleKD = 0.0;
-        double angleKS = 0.0;
+        SlotConfigs angleSlotConfigs = (new SlotConfigs()).withKP(0.3);
         InvertedValue driveMotorInvert = InvertedValue.Clockwise_Positive;
         InvertedValue angleMotorInvert = InvertedValue.Clockwise_Positive;
         SensorDirectionValue canCoderSensorDirection = SensorDirectionValue.Clockwise_Positive;
         return new SDSModuleConfiguration(wheelDiameter, angleGearRatio,
-                driveGearRatio, angleKP, angleKI,
-                angleKD, angleKS, driveMotorInvert,
+                driveGearRatio, angleSlotConfigs, driveMotorInvert,
                 angleMotorInvert, canCoderSensorDirection);
     }
 

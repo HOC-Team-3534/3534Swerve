@@ -1,6 +1,5 @@
 package swerve.motors.ctre;
 
-import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.controls.PositionDutyCycle;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;

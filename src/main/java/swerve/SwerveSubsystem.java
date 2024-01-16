@@ -33,8 +33,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
     /**
      * 
-     * @param quas_voltage  the quasiastic voltage per second
-     * @param quas_duration the quasiastic test duration
+     * @param quas_voltage
+     *            the quasiastic voltage per second
+     * @param quas_duration
+     *            the quasiastic test duration
      * @return the command to characterize the swerve drivetrain
      */
     public Command characterizeDrive(double quas_voltage, double quas_duration) {
@@ -137,7 +139,7 @@ class PolynomialRegression {
     }
 
     public double R2(double[] x, double[] y) {
-        
+
         double sst = 0, sse = 0, yMean = 0;
         for (int i = 0; i < y.length; i++) {
             yMean += y[i];

@@ -4,7 +4,6 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import swerve.SwerveConstants;
@@ -15,12 +14,9 @@ public class BasicSteerController implements ISteerController {
     final Encoder steerEncoder;
     final int kEncoderResolution = 4096;
     double lastVoltage;
-    private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(SwerveConstants.steerKS,
-            SwerveConstants.steerKV);
-    private final ProfiledPIDController m_turningPIDController = new ProfiledPIDController(SwerveConstants.steerKP, 0,
-            0,
-            new TrapezoidProfile.Constraints(SwerveConstants.moduleMaxAngularVel,
-                    SwerveConstants.moduleMaxAngularAccel));
+    private final SimpleMotorFeedforward m_turnFeedforward = SwerveConstants
+            .SlotConfigs2SimpleMotorFeedForward(SwerveConstants.moduleConfiguration.angleSlotConfigs);
+    private final ProfiledPIDController m_turningPIDController = SwerveConstants.getSteerPidController();
 
     public BasicSteerController(MotorController steerMotor, Encoder steerEncoder) {
         this.steerMotor = steerMotor;

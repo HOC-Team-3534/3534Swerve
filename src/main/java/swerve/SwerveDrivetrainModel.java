@@ -50,10 +50,10 @@ public class SwerveDrivetrainModel {
                 getRawGyroHeading(),
                 getModulePositions(),
                 new Pose2d(),
-                VecBuilder.fill(SwerveConstants.modulePoseEstXStdDev, SwerveConstants.modulePoseEstYStdDev,
-                        SwerveConstants.modulePoseEstAngleStdDev.getRadians()),
-                VecBuilder.fill(SwerveConstants.visionPoseEstXStdDev, SwerveConstants.visionPoseEstYStdDev,
-                        SwerveConstants.visionPoseEstAngleStdDev.getRadians()));
+                VecBuilder.fill(SwerveConstants.modulePoseEstStdDevs.x, SwerveConstants.modulePoseEstStdDevs.y,
+                        SwerveConstants.modulePoseEstStdDevs.angle.getRadians()),
+                VecBuilder.fill(SwerveConstants.visionPoseEstStdDevs.x, SwerveConstants.visionPoseEstStdDevs.y,
+                        SwerveConstants.visionPoseEstStdDevs.angle.getRadians()));
         orientationChooser.setDefaultOption("Field Oriented", "Field Oriented");
         orientationChooser.addOption("Robot Oriented", "Robot Oriented");
         SmartDashboard.putData("Orientation Chooser", orientationChooser);
@@ -73,12 +73,12 @@ public class SwerveDrivetrainModel {
 
     public void setModuleStates(SwerveInput input, boolean creep,
             boolean isOpenLoop) {
-        var driveProp = creep ? SwerveConstants.slowDriveProp
-                : SwerveConstants.fastDriveProp;
-        var steerProp = creep ? SwerveConstants.slowSteerProp
-                : SwerveConstants.fastSteerProp;
-        var modMaxSpeed = driveProp * SwerveConstants.maxSpeed;
-        var modMaxAngularSpeed = steerProp * SwerveConstants.robotMaxAngularVel;
+        var driveProp = creep ? SwerveConstants.speedLimiterProps.slowDriveProp
+                : SwerveConstants.speedLimiterProps.fastDriveProp;
+        var steerProp = creep ? SwerveConstants.speedLimiterProps.slowSteerProp
+                : SwerveConstants.speedLimiterProps.fastSteerProp;
+        var modMaxSpeed = driveProp * SwerveConstants.maxKinematics.vel;
+        var modMaxAngularSpeed = steerProp * SwerveConstants.maxKinematics.angVel;
         input = handleStationary(input);
         switch (orientationChooser.getSelected()) {
             case "Field Oriented":
@@ -106,7 +106,7 @@ public class SwerveDrivetrainModel {
             var chassisSpeeds = SwerveConstants.kinematics.toChassisSpeeds(states);
             simGyroAngleCache = simGyroAngleCache.plus(new Rotation2d(chassisSpeeds.omegaRadiansPerSecond * 0.020));
         }
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveConstants.maxSpeed);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveConstants.maxKinematics.vel);
         for (int i = 0; i < NUM_MODULES; i++) {
             modules[i].setDesiredState(states[i], isOpenLoop);
         }

@@ -2,8 +2,10 @@ package swerve;
 
 public class Conversions {
     /**
-     * @param degrees   Degrees of Rotation of Mechanism
-     * @param gearRatio Gear Ratio Between Falcon and Mechanism
+     * @param degrees
+     *            Degrees of Rotation of Mechanism
+     * @param gearRatio
+     *            Gear Ratio Between Falcon and Mechanism
      * 
      * @return Falcon Rotations
      */
@@ -12,8 +14,10 @@ public class Conversions {
     }
 
     /**
-     * @param velocityRPS Falcon Velocity Rotations per Second
-     * @param gearRatio   Gear Ratio Between Falcon and Mechanism
+     * @param velocityRPS
+     *            Falcon Velocity Rotations per Second
+     * @param gearRatio
+     *            Gear Ratio Between Falcon and Mechanism
      * 
      * @return Rotations of Mechanism per Second
      */
@@ -23,8 +27,10 @@ public class Conversions {
     }
 
     /**
-     * @param wheelRotations Wheel Rotations
-     * @param gearRatio      Gear Ratio Between Falcon and Mechanism
+     * @param wheelRotations
+     *            Wheel Rotations
+     * @param gearRatio
+     *            Gear Ratio Between Falcon and Mechanism
      * 
      * @return Rotations of Falcon per Second
      */
@@ -34,9 +40,12 @@ public class Conversions {
     }
 
     /**
-     * @param velocityRPS   Falcon Velocity Rotations per Second
-     * @param circumference Circumference of Wheel
-     * @param gearRatio     Gear Ratio between Falcon and Mechanism
+     * @param velocityRPS
+     *            Falcon Velocity Rotations per Second
+     * @param circumference
+     *            Circumference of Wheel
+     * @param gearRatio
+     *            Gear Ratio between Falcon and Mechanism
      * 
      * @return Falcon Velocity Counts
      */
@@ -47,9 +56,12 @@ public class Conversions {
     }
 
     /**
-     * @param positionRotations Falcon Position Rotations
-     * @param circumference     Circumference of Wheel
-     * @param gearRatio         Gear Ratio Between Falcon and Mechanism
+     * @param positionRotations
+     *            Falcon Position Rotations
+     * @param circumference
+     *            Circumference of Wheel
+     * @param gearRatio
+     *            Gear Ratio Between Falcon and Mechanism
      * 
      * @return Meters
      */
@@ -60,9 +72,12 @@ public class Conversions {
     }
 
     /**
-     * @param wheelMPS      Wheel Meters per Second
-     * @param circumference Circumference of Wheel
-     * @param gearRatio     Gear Ratio Between Falcon and Mechanism
+     * @param wheelMPS
+     *            Wheel Meters per Second
+     * @param circumference
+     *            Circumference of Wheel
+     * @param gearRatio
+     *            Gear Ratio Between Falcon and Mechanism
      * 
      * @return Falcons Rotations per Second
      */
