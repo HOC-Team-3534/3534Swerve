@@ -10,15 +10,15 @@ import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import swerve.SwerveConstants;
 import swerve.motors.IDriveController;
+import swerve.params.SwerveParams;
 
 public class NeoDriveController implements IDriveController {
     final CANSparkMax driveMotor;
     final RelativeEncoder driveEncoder;
     final SparkPIDController drivePID;
-    final SimpleMotorFeedforward m_driveFeedforward = SwerveConstants
-            .SlotConfigs2SimpleMotorFeedForward(SwerveConstants.driveSlotConfigs);
+    SimpleMotorFeedforward m_driveFeedforward;
+    SwerveParams swerveParams;
 
     public NeoDriveController(CANSparkMax driveMotor) {
         this.driveMotor = driveMotor;
@@ -27,24 +27,25 @@ public class NeoDriveController implements IDriveController {
     }
 
     @Override
-    public void config() {
+    public void config(SwerveParams swerveParams) {
+        this.swerveParams = swerveParams;
+        var currentLimits = swerveParams.getSwerveCurrentLimitConfigs().drive;
+        var driveRamps = swerveParams.getDriveRampingConfigs();
+        var modConfig = swerveParams.getModuleConfiguration();
         driveMotor.restoreFactoryDefaults();
-        var currentLimits = SwerveConstants.swerveCurrentLimitConfigs.drive;
         driveMotor.setSmartCurrentLimit((int) currentLimits.SupplyCurrentLimit);
         driveMotor.setSecondaryCurrentLimit((int) currentLimits.SupplyCurrentThreshold);
-        driveMotor.setInverted(
-                SwerveConstants.moduleConfiguration.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
-        driveMotor.setIdleMode((SwerveConstants.neutralModes.drive == NeutralModeValue.Brake) ? IdleMode.kBrake
+        driveMotor.setInverted(modConfig.driveMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
+        driveMotor.setIdleMode((swerveParams.getNeutralModes().drive == NeutralModeValue.Brake) ? IdleMode.kBrake
                 : IdleMode.kCoast);
-        driveMotor.setOpenLoopRampRate(SwerveConstants.driveRampingConfigs.openLoopConfigs.DutyCycleOpenLoopRampPeriod);
-        driveMotor.setClosedLoopRampRate(
-                SwerveConstants.driveRampingConfigs.closedLoopConfigs.DutyCycleClosedLoopRampPeriod);
-        driveEncoder.setPositionConversionFactor(1 / SwerveConstants.moduleConfiguration.driveGearRatio
-                * SwerveConstants.moduleConfiguration.wheelCircumference);
-        driveEncoder.setVelocityConversionFactor(1 / SwerveConstants.moduleConfiguration.driveGearRatio
-                * SwerveConstants.moduleConfiguration.wheelCircumference / 60.0);
+        driveMotor.setOpenLoopRampRate(driveRamps.openLoopConfigs.DutyCycleOpenLoopRampPeriod);
+        driveMotor.setClosedLoopRampRate(driveRamps.closedLoopConfigs.DutyCycleClosedLoopRampPeriod);
+        driveEncoder.setPositionConversionFactor(1 / modConfig.driveGearRatio * modConfig.wheelCircumference);
+        driveEncoder.setVelocityConversionFactor(1 / modConfig.driveGearRatio * modConfig.wheelCircumference / 60.0);
         driveEncoder.setPosition(0);
-        drivePID.setP(SwerveConstants.driveSlotConfigs.kP);
+        drivePID.setP(swerveParams.getDriveSlotConfigs().kP);
+
+        m_driveFeedforward = SwerveParams.SlotConfigs2SimpleMotorFeedForward(swerveParams.getDriveSlotConfigs());
     }
 
     @Override
@@ -65,7 +66,7 @@ public class NeoDriveController implements IDriveController {
     @Override
     public void setSpeed(SwerveModuleState desiredState, boolean isOpenLoop) {
         if (isOpenLoop) {
-            double percentOutput = desiredState.speedMetersPerSecond / SwerveConstants.maxKinematics.vel;
+            double percentOutput = desiredState.speedMetersPerSecond / swerveParams.getMaxKinematics().vel;
             driveMotor.set(percentOutput);
         } else {
             drivePID.setReference(desiredState.speedMetersPerSecond, ControlType.kVelocity, 0,
@@ -75,7 +76,7 @@ public class NeoDriveController implements IDriveController {
 
     @Override
     public void setVoltage(double voltage) {
-        driveMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.driveMotorInvert
+        driveMotor.setVoltage(voltage * ((swerveParams.getModuleConfiguration().driveMotorInvert
                 .equals(InvertedValue.CounterClockwise_Positive)) ? -1
                         : 1));
     }

@@ -6,17 +6,17 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
-import swerve.SwerveConstants;
 import swerve.motors.ISteerController;
+import swerve.params.SwerveParams;
 
 public class BasicSteerController implements ISteerController {
     final MotorController steerMotor;
     final Encoder steerEncoder;
     final int kEncoderResolution = 4096;
     double lastVoltage;
-    private final SimpleMotorFeedforward m_turnFeedforward = SwerveConstants
-            .SlotConfigs2SimpleMotorFeedForward(SwerveConstants.moduleConfiguration.angleSlotConfigs);
-    private final ProfiledPIDController m_turningPIDController = SwerveConstants.getSteerPidController();
+    SimpleMotorFeedforward m_turnFeedforward;
+    ProfiledPIDController m_turningPIDController;
+    SwerveParams swerveParams;
 
     public BasicSteerController(MotorController steerMotor, Encoder steerEncoder) {
         this.steerMotor = steerMotor;
@@ -24,10 +24,16 @@ public class BasicSteerController implements ISteerController {
     }
 
     @Override
-    public void config() {
-        var config = SwerveConstants.moduleConfiguration;
-        steerEncoder.setDistancePerPulse(2 * Math.PI / config.angleGearRatio / kEncoderResolution);
+    public void config(SwerveParams swerveParams) {
+        this.swerveParams = swerveParams;
+
+        var modConfig = swerveParams.getModuleConfiguration();
+
+        steerEncoder.setDistancePerPulse(2 * Math.PI / modConfig.angleGearRatio / kEncoderResolution);
         m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
+
+        m_turnFeedforward = SwerveParams.SlotConfigs2SimpleMotorFeedForward(modConfig.angleSlotConfigs);
+        m_turningPIDController = swerveParams.getSteerPidController();
     }
 
     @Override

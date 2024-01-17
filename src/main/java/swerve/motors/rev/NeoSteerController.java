@@ -11,8 +11,8 @@ import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import swerve.SwerveConstants;
 import swerve.motors.ISteerController;
+import swerve.params.SwerveParams;
 
 public class NeoSteerController implements ISteerController {
     final CANSparkMax steerMotor;
@@ -22,6 +22,7 @@ public class NeoSteerController implements ISteerController {
     final Rotation2d angleOffset;
     Rotation2d lastAngle;
     private static final double SpeedNotChangeAngle = 0.05;
+    SwerveParams swerveParams;
 
     public NeoSteerController(CANSparkMax steerMotor, CANcoder absoluteEncoder,
             Rotation2d angleOffset) {
@@ -33,20 +34,25 @@ public class NeoSteerController implements ISteerController {
     }
 
     @Override
-    public void config() {
-        absoluteEncoder.getConfigurator().apply(SwerveConstants.swerveCanCoderConfig);
+    public void config(SwerveParams swerveParams) {
+        this.swerveParams = swerveParams;
+
+        absoluteEncoder.getConfigurator().apply(swerveParams.getSwerveCanCoderConfig());
+
         steerMotor.restoreFactoryDefaults();
-        var currentLimits = SwerveConstants.swerveCurrentLimitConfigs.steer;
+
+        var currentLimits = swerveParams.getSwerveCurrentLimitConfigs().steer;
+        var modConfig = swerveParams.getModuleConfiguration();
+
         steerMotor.setSmartCurrentLimit((int) currentLimits.SupplyCurrentLimit);
         steerMotor.setSecondaryCurrentLimit((int) currentLimits.SupplyCurrentThreshold);
-        steerMotor.setInverted(
-                SwerveConstants.moduleConfiguration.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
-        steerMotor.setIdleMode((SwerveConstants.neutralModes.steer == NeutralModeValue.Brake) ? IdleMode.kBrake
+        steerMotor.setInverted(modConfig.angleMotorInvert.equals(InvertedValue.CounterClockwise_Positive));
+        steerMotor.setIdleMode((swerveParams.getNeutralModes().steer == NeutralModeValue.Brake) ? IdleMode.kBrake
                 : IdleMode.kCoast);
-        steerEncoder.setPositionConversionFactor(1 / SwerveConstants.moduleConfiguration.angleGearRatio * 360.0);
-        steerEncoder.setVelocityConversionFactor(1 / SwerveConstants.moduleConfiguration.angleGearRatio * 360.0 / 60.0);
+        steerEncoder.setPositionConversionFactor(1 / modConfig.angleGearRatio * 360.0);
+        steerEncoder.setVelocityConversionFactor(1 / modConfig.angleGearRatio * 360.0 / 60.0);
         resetToAbsolute();
-        var anglePID = SwerveConstants.moduleConfiguration.angleSlotConfigs;
+        var anglePID = modConfig.angleSlotConfigs;
         steerPID.setP(anglePID.kP);
         steerPID.setI(anglePID.kI);
         steerPID.setD(anglePID.kD);
@@ -87,7 +93,7 @@ public class NeoSteerController implements ISteerController {
 
     @Override
     public void setVoltage(double voltage) {
-        steerMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.angleMotorInvert
+        steerMotor.setVoltage(voltage * ((swerveParams.getModuleConfiguration().angleMotorInvert
                 .equals(InvertedValue.CounterClockwise_Positive)) ? -1
                         : 1));
     }

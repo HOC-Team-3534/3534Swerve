@@ -1,11 +1,12 @@
 package swerve;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ctre.phoenix6.hardware.Pigeon2;
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -18,42 +19,42 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import swerve.params.SwerveParams;
+import swerve.path.IPathPlanner;
 
 public class SwerveDrivetrainModel {
     public final static int NUM_MODULES = 4;
-    final SwerveModule[] modules = new SwerveModule[NUM_MODULES];
+    final ArrayList<SwerveModule> modules;
     final Pigeon2 pigeon;
     final SwerveDrivePoseEstimator poseEstimator;
     private static final SendableChooser<String> orientationChooser = new SendableChooser<>();
     Rotation2d simGyroAngleCache = new Rotation2d();
+    final SwerveParams swerveParams;
+    IPathPlanner pathPlanner;
 
     public SwerveDrivetrainModel(SwerveModule frontLeftModule,
             SwerveModule frontRightModule,
             SwerveModule backLeftModule,
-            SwerveModule backRighModule, Pigeon2 pigeon, SwerveSubsystem swerve) {
-        modules[0] = frontLeftModule;
-        modules[1] = frontRightModule;
-        modules[2] = backLeftModule;
-        modules[3] = backRighModule;
+            SwerveModule backRighModule, Pigeon2 pigeon, SwerveParams swerveParams, SwerveSubsystem swerve) {
+        modules = (ArrayList<SwerveModule>) List.of(frontLeftModule, frontRightModule, backLeftModule, backRighModule);
         this.pigeon = pigeon;
+        this.swerveParams = swerveParams;
 
-        AutoBuilder.configureHolonomic(this::getPose, this::setKnownPose, this::getSpeeds,
-                (speeds) -> this.setModuleStates(speeds, false), SwerveConstants.holonomicPathFollowerConfig,
-                () -> false,
-                swerve);
+        modules.forEach(module -> module.configController(swerveParams));
+
+        pathPlanner = new IPathPlanner() {
+        };
         /*
          * Here we use SwerveDrivePoseEstimator so that we can fuse odometry
          * readings. The numbers used below are robot specific, and should be
          * tuned.
          */
-        poseEstimator = new SwerveDrivePoseEstimator(SwerveConstants.kinematics,
+        poseEstimator = new SwerveDrivePoseEstimator(swerveParams.getKinematics(),
                 getRawGyroHeading(),
                 getModulePositions(),
                 new Pose2d(),
-                VecBuilder.fill(SwerveConstants.modulePoseEstStdDevs.x, SwerveConstants.modulePoseEstStdDevs.y,
-                        SwerveConstants.modulePoseEstStdDevs.angle.getRadians()),
-                VecBuilder.fill(SwerveConstants.visionPoseEstStdDevs.x, SwerveConstants.visionPoseEstStdDevs.y,
-                        SwerveConstants.visionPoseEstStdDevs.angle.getRadians()));
+                swerveParams.getModulePoseEstStdDevs().toVector(),
+                swerveParams.getVisionPoseEstStdDevs().toVector());
         orientationChooser.setDefaultOption("Field Oriented", "Field Oriented");
         orientationChooser.addOption("Robot Oriented", "Robot Oriented");
         SmartDashboard.putData("Orientation Chooser", orientationChooser);
@@ -73,12 +74,12 @@ public class SwerveDrivetrainModel {
 
     public void setModuleStates(SwerveInput input, boolean creep,
             boolean isOpenLoop) {
-        var driveProp = creep ? SwerveConstants.speedLimiterProps.slowDriveProp
-                : SwerveConstants.speedLimiterProps.fastDriveProp;
-        var steerProp = creep ? SwerveConstants.speedLimiterProps.slowSteerProp
-                : SwerveConstants.speedLimiterProps.fastSteerProp;
-        var modMaxSpeed = driveProp * SwerveConstants.maxKinematics.vel;
-        var modMaxAngularSpeed = steerProp * SwerveConstants.maxKinematics.angVel;
+        var props = swerveParams.getSpeedLimiterProps();
+        var driveProp = creep ? props.slowDriveProp : props.fastDriveProp;
+        var steerProp = creep ? props.slowSteerProp : props.fastSteerProp;
+        var maxes = swerveParams.getMaxKinematics();
+        var modMaxSpeed = driveProp * maxes.vel;
+        var modMaxAngularSpeed = steerProp * maxes.angVel;
         input = handleStationary(input);
         switch (orientationChooser.getSelected()) {
             case "Field Oriented":
@@ -97,24 +98,24 @@ public class SwerveDrivetrainModel {
 
     public void setModuleStates(ChassisSpeeds chassisSpeeds,
             boolean isOpenLoop) {
-        SwerveModuleState[] swerveModuleStates = SwerveConstants.kinematics.toSwerveModuleStates(chassisSpeeds);
+        SwerveModuleState[] swerveModuleStates = swerveParams.getKinematics().toSwerveModuleStates(chassisSpeeds);
         setModuleStates(swerveModuleStates, isOpenLoop);
     }
 
     private void setModuleStates(SwerveModuleState[] states, boolean isOpenLoop) {
         if (RobotBase.isSimulation()) {
-            var chassisSpeeds = SwerveConstants.kinematics.toChassisSpeeds(states);
+            var chassisSpeeds = swerveParams.getKinematics().toChassisSpeeds(states);
             simGyroAngleCache = simGyroAngleCache.plus(new Rotation2d(chassisSpeeds.omegaRadiansPerSecond * 0.020));
         }
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveConstants.maxKinematics.vel);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, swerveParams.getMaxKinematics().vel);
         for (int i = 0; i < NUM_MODULES; i++) {
-            modules[i].setDesiredState(states[i], isOpenLoop);
+            modules.get(i).setDesiredState(states[i], isOpenLoop);
         }
     }
 
     public void setVoltageToZero() {
         for (int i = 0; i < NUM_MODULES; i++) {
-            modules[i].setDriveVoltageForCharacterization(0);
+            modules.get(i).setDriveVoltageForCharacterization(0);
         }
     }
 
@@ -123,14 +124,13 @@ public class SwerveDrivetrainModel {
     }
 
     public ChassisSpeeds getSpeeds() {
-        return SwerveConstants.kinematics.toChassisSpeeds(getSwerveModuleStates());
-
+        return swerveParams.getKinematics().toChassisSpeeds(getSwerveModuleStates());
     }
 
     public SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] positions = new SwerveModulePosition[NUM_MODULES];
         for (int i = 0; i < NUM_MODULES; i++) {
-            positions[i] = modules[i].getPosition();
+            positions[i] = modules.get(i).getPosition();
         }
         return positions;
     }
@@ -138,7 +138,7 @@ public class SwerveDrivetrainModel {
     public SwerveModuleState[] getSwerveModuleStates() {
         SwerveModuleState[] states = new SwerveModuleState[NUM_MODULES];
         for (int i = 0; i < NUM_MODULES; i++) {
-            states[i] = modules[i].getState();
+            states[i] = modules.get(i).getState();
         }
         return states;
     }
@@ -157,14 +157,12 @@ public class SwerveDrivetrainModel {
         return poseEstimator.getEstimatedPosition().getRotation();
     }
 
-    public Command pathfindToPose(Pose2d endPose, double endVelocity, double autonMaxSpeed,
-            double autonMaxAccel, double autonMaxAngSpeed, double autonMaxAngAccel) {
-        return AutoBuilder.pathfindToPose(endPose,
-                new PathConstraints(autonMaxSpeed, autonMaxAccel, autonMaxAngSpeed, autonMaxAngAccel), endVelocity);
+    public Command pathfindToPose(Pose2d endPose, PathConstraints pathConstraints, double endVelocity) {
+        return pathPlanner.pathfindToPose(endPose, pathConstraints, endVelocity);
     }
 
     public Command followPath(PathPlannerPath path) {
-        return AutoBuilder.followPath(path);
+        return pathPlanner.followPath(path);
     }
 
     private SwerveInput handleStationary(SwerveInput input) {
@@ -178,6 +176,6 @@ public class SwerveDrivetrainModel {
     }
 
     public SwerveModule[] getSwerveModules() {
-        return modules;
+        return (SwerveModule[]) modules.toArray();
     }
 }

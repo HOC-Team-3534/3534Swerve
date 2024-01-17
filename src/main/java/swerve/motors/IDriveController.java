@@ -1,9 +1,10 @@
 package swerve.motors;
 
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import swerve.params.SwerveParams;
 
 public interface IDriveController {
-    void config();
+    void config(SwerveParams swerveParams);
 
     double getVoltage();
 
@@ -20,7 +21,8 @@ public interface IDriveController {
     void setSpeed(SwerveModuleState desiredState, boolean isOpenLoop);
 
     /**
-     * @param voltage the voltage to send to the drive motor
+     * @param voltage
+     *            the voltage to send to the drive motor
      */
     void setVoltage(double voltage);
 }

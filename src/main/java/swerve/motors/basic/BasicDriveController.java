@@ -5,17 +5,17 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
-import swerve.SwerveConstants;
 import swerve.motors.IDriveController;
+import swerve.params.SwerveParams;
 
 public class BasicDriveController implements IDriveController {
     final MotorController driveMotor;
     final Encoder driveEncoder;
     final int kEncoderResolution = 4096;
     double lastVoltage;
-    final PIDController m_drivePIDController = new PIDController(SwerveConstants.driveSlotConfigs.kP, 0, 0);
-    final SimpleMotorFeedforward m_driveFeedforward = SwerveConstants
-            .SlotConfigs2SimpleMotorFeedForward(SwerveConstants.driveSlotConfigs);
+    PIDController m_drivePIDController;
+    SimpleMotorFeedforward m_driveFeedforward;
+    SwerveParams swerveParams;
 
     public BasicDriveController(MotorController driveMotor, Encoder driveEncoder) {
         this.driveMotor = driveMotor;
@@ -23,9 +23,17 @@ public class BasicDriveController implements IDriveController {
     }
 
     @Override
-    public void config() {
-        var config = SwerveConstants.moduleConfiguration;
-        driveEncoder.setDistancePerPulse(Math.PI * config.wheelDiameter / config.driveGearRatio / kEncoderResolution);
+    public void config(SwerveParams swerveParams) {
+        this.swerveParams = swerveParams;
+
+        var modConfig = swerveParams.getModuleConfiguration();
+        var driveSlot = swerveParams.getDriveSlotConfigs();
+
+        driveEncoder
+                .setDistancePerPulse(Math.PI * modConfig.wheelDiameter / modConfig.driveGearRatio / kEncoderResolution);
+
+        m_drivePIDController = new PIDController(driveSlot.kP, 0, 0);
+        m_driveFeedforward = SwerveParams.SlotConfigs2SimpleMotorFeedForward(driveSlot);
     }
 
     @Override
@@ -52,7 +60,7 @@ public class BasicDriveController implements IDriveController {
     @Override
     public void setSpeed(SwerveModuleState desiredState, boolean isOpenLoop) {
         if (isOpenLoop) {
-            double percentOutput = desiredState.speedMetersPerSecond / SwerveConstants.maxKinematics.vel;
+            double percentOutput = desiredState.speedMetersPerSecond / swerveParams.getMaxKinematics().vel;
             driveMotor.setVoltage(percentOutput);
         } else {
             // Calculate the drive output from the drive PID controller.

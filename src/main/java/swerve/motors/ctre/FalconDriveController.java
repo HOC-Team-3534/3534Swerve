@@ -6,62 +6,66 @@ import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import swerve.Conversions;
-import swerve.SwerveConstants;
 import swerve.motors.IDriveController;
+import swerve.params.SwerveParams;
 
 public class FalconDriveController implements IDriveController {
     final TalonFX driveMotor;
+    SwerveParams swerveParams;
 
     public FalconDriveController(TalonFX driveMotor) {
         this.driveMotor = driveMotor;
     }
 
     @Override
-    public void config() {
-        driveMotor.getConfigurator().apply(SwerveConstants.swerveDriveFXConfig);
+    public void config(SwerveParams swerveParams) {
+        this.swerveParams = swerveParams;
+
+        driveMotor.getConfigurator().apply(swerveParams.getDriveFxConfiguration());
         driveMotor.setPosition(0);
     }
 
     @Override
     public double getVelocity() {
-        var config = SwerveConstants.moduleConfiguration;
+        var modConfig = swerveParams.getModuleConfiguration();
         return Conversions.falconRotationsPerSecondToWheelMetersPerSecond(driveMotor.getVelocity().getValueAsDouble(),
-                config.wheelCircumference,
-                config.driveGearRatio);
+                modConfig.wheelCircumference,
+                modConfig.driveGearRatio);
     }
 
     @Override
     public double getDistance() {
-        var config = SwerveConstants.moduleConfiguration;
+        var modConfig = swerveParams.getModuleConfiguration();
         return Conversions.falconRotationsToWheelMeters(driveMotor.getPosition().getValueAsDouble(),
-                config.wheelCircumference,
-                config.driveGearRatio);
+                modConfig.wheelCircumference,
+                modConfig.driveGearRatio);
     }
 
     @Override
     public void setVoltage(double voltage) {
-        driveMotor.setVoltage(voltage * ((SwerveConstants.moduleConfiguration.driveMotorInvert
+        driveMotor.setVoltage(voltage * ((swerveParams.getModuleConfiguration().driveMotorInvert
                 .equals(InvertedValue.CounterClockwise_Positive)) ? -1
                         : 1));
     }
 
     @Override
     public double getVoltage() {
-        return driveMotor.getMotorVoltage().getValueAsDouble() * ((SwerveConstants.moduleConfiguration.driveMotorInvert
-                .equals(InvertedValue.CounterClockwise_Positive)) ? -1
-                        : 1);
+        return driveMotor.getMotorVoltage().getValueAsDouble()
+                * ((swerveParams.getModuleConfiguration().driveMotorInvert
+                        .equals(InvertedValue.CounterClockwise_Positive)) ? -1
+                                : 1);
     }
 
     @Override
     public void setSpeed(SwerveModuleState desiredState, boolean isOpenLoop) {
         if (isOpenLoop) {
-            double percentOutput = desiredState.speedMetersPerSecond / SwerveConstants.maxKinematics.vel;
+            double percentOutput = desiredState.speedMetersPerSecond / swerveParams.getMaxKinematics().vel;
             driveMotor.set(percentOutput);
         } else {
-            var config = SwerveConstants.moduleConfiguration;
+            var modConfig = swerveParams.getModuleConfiguration();
             double velocity = Conversions.wheelMetersPerSecondToFalconRotationsPerSecond(
-                    desiredState.speedMetersPerSecond, config.wheelCircumference,
-                    config.driveGearRatio);
+                    desiredState.speedMetersPerSecond, modConfig.wheelCircumference,
+                    modConfig.driveGearRatio);
             driveMotor.setControl(new VelocityDutyCycle(velocity));
         }
     }

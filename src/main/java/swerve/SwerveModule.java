@@ -21,6 +21,7 @@ import swerve.motors.ctre.FalconDriveController;
 import swerve.motors.ctre.FalconSteerController;
 import swerve.motors.rev.NeoDriveController;
 import swerve.motors.rev.NeoSteerController;
+import swerve.params.SwerveParams;
 
 public class SwerveModule {
   final IDriveController m_driveController;
@@ -51,8 +52,6 @@ public class SwerveModule {
       Encoder driveEncoder, Encoder turningEncoder) {
     m_driveController = new BasicDriveController(driveMotor, driveEncoder);
     m_steerController = new BasicSteerController(turningMotor, turningEncoder);
-    m_driveController.config();
-    m_steerController.config();
     moduleType = ModuleType.Basic;
   }
 
@@ -61,8 +60,6 @@ public class SwerveModule {
     m_driveController = new FalconDriveController(driveMotor);
     m_steerController = new FalconSteerController(steerMotor, absoluteEncoder,
         angleOffset);
-    m_driveController.config();
-    m_steerController.config();
     moduleType = ModuleType.FalconFalconCANcoder;
   }
 
@@ -70,8 +67,6 @@ public class SwerveModule {
       CANcoder absoluteEncoder, Rotation2d angleOffset) {
     m_driveController = new FalconDriveController(driveMotor);
     m_steerController = new NeoSteerController(steerMotor, absoluteEncoder, angleOffset);
-    m_driveController.config();
-    m_steerController.config();
     moduleType = ModuleType.FalconNEOCANcoder;
   }
 
@@ -80,8 +75,6 @@ public class SwerveModule {
     m_driveController = new NeoDriveController(driveMotor);
     m_steerController = new FalconSteerController(steerMotor, absoluteEncoder,
         angleOffset);
-    m_driveController.config();
-    m_steerController.config();
     moduleType = ModuleType.NEOFalconCANcoder;
   }
 
@@ -89,9 +82,12 @@ public class SwerveModule {
       CANcoder absoluteEncoder, Rotation2d angleOffset) {
     m_driveController = new NeoDriveController(driveMotor);
     m_steerController = new NeoSteerController(steerMotor, absoluteEncoder, angleOffset);
-    m_driveController.config();
-    m_steerController.config();
     moduleType = ModuleType.FalconNEOCANcoder;
+  }
+
+  public void configController(SwerveParams swerveParams) {
+    m_driveController.config(swerveParams);
+    m_steerController.config(swerveParams);
   }
 
   /**
