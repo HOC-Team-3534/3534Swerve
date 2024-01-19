@@ -74,6 +74,11 @@ public class SwerveDrivetrainModel {
 
     public void setModuleStates(SwerveInput input, boolean creep,
             boolean isOpenLoop) {
+        setModuleStates(input, creep, orientationChooser.getSelected().equals("Field Oriented"), isOpenLoop);
+    }
+
+    public void setModuleStates(SwerveInput input, boolean creep, boolean fieldOriented,
+            boolean isOpenLoop) {
         var props = swerveParams.getSpeedLimiterProps();
         var driveProp = creep ? props.slowDriveProp : props.fastDriveProp;
         var steerProp = creep ? props.slowSteerProp : props.fastSteerProp;
@@ -81,19 +86,13 @@ public class SwerveDrivetrainModel {
         var modMaxSpeed = driveProp * maxes.vel;
         var modMaxAngularSpeed = steerProp * maxes.angVel;
         input = handleStationary(input);
-        switch (orientationChooser.getSelected()) {
-            case "Field Oriented":
-                setModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(input.m_translationX * modMaxSpeed,
-                        input.m_translationY * modMaxSpeed, input.m_rotation * modMaxAngularSpeed, getGyroHeading()),
-                        isOpenLoop);
-                break;
-
-            case "Robot Oriented":
-                setModuleStates(new ChassisSpeeds(input.m_translationX * modMaxSpeed,
-                        input.m_translationY * modMaxSpeed,
-                        input.m_rotation * modMaxAngularSpeed), isOpenLoop);
-                break;
+        var chassisSpeeds = new ChassisSpeeds(input.m_translationX * modMaxSpeed,
+                input.m_translationY * modMaxSpeed,
+                input.m_rotation * modMaxAngularSpeed);
+        if (fieldOriented) {
+            chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, getGyroHeading());
         }
+        setModuleStates(chassisSpeeds, false);
     }
 
     public void setModuleStates(ChassisSpeeds chassisSpeeds,
@@ -154,7 +153,7 @@ public class SwerveDrivetrainModel {
     }
 
     public Rotation2d getGyroHeading() {
-        return poseEstimator.getEstimatedPosition().getRotation();
+        return getPose().getRotation();
     }
 
     public Command pathfindToPose(Pose2d endPose, PathConstraints pathConstraints, double endVelocity) {
