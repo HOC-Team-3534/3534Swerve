@@ -32,9 +32,12 @@ public class SwerveParams {
 
         public SwerveParams(RobotMaxKinematics maxKinematics, SwerveDriveKinematics kinematics,
                         SDSModuleConfiguration moduleConfiguration,
-                        HolonomicPathFollowerConfig holonomicPathFollowerConfig, SlotConfigs driveSlotConfigs) {
+                        HolonomicPathFollowerConfig holonomicPathFollowerConfig, SlotConfigs driveSlotConfigs,
+                        PoseEstimationStandardDeviations modulePoseEstStdDevs,
+                        PoseEstimationStandardDeviations visionPoseEstStdDevs) {
                 this(maxKinematics, kinematics, moduleConfiguration, holonomicPathFollowerConfig,
-                                new SwerveModuleCurrentLimitConfigs(), driveSlotConfigs, new DriveRampingConfigs(),
+                                new SwerveModuleCurrentLimitConfigs(), driveSlotConfigs, modulePoseEstStdDevs,
+                                visionPoseEstStdDevs, new DriveRampingConfigs(),
                                 new SpeedLimiterProportions(), new SwerveNeutralModes());
         }
 
@@ -44,6 +47,8 @@ public class SwerveParams {
                         HolonomicPathFollowerConfig holonomicPathFollowerConfig,
                         SwerveModuleCurrentLimitConfigs currentLimitConfigs,
                         SlotConfigs driveSlotConfigs,
+                        PoseEstimationStandardDeviations modulePoseEstStdDevs,
+                        PoseEstimationStandardDeviations visionPoseEstStdDevs,
                         DriveRampingConfigs driveRampingConfigs,
                         SpeedLimiterProportions speedLimiterProportions,
                         SwerveNeutralModes neutralModes) {
@@ -53,6 +58,8 @@ public class SwerveParams {
                 this.holonomicPathFollowerConfig = holonomicPathFollowerConfig;
                 this.swerveCurrentLimitConfigs = currentLimitConfigs;
                 this.driveSlotConfigs = driveSlotConfigs;
+                this.modulePoseEstStdDevs = modulePoseEstStdDevs;
+                this.visionPoseEstStdDevs = visionPoseEstStdDevs;
                 this.driveRampingConfigs = driveRampingConfigs;
                 this.speedLimiterProps = speedLimiterProportions;
                 this.neutralModes = neutralModes;
