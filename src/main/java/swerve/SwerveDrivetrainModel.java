@@ -7,6 +7,7 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -14,6 +15,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -31,6 +33,8 @@ public class SwerveDrivetrainModel {
     Rotation2d simGyroAngleCache = new Rotation2d();
     final SwerveParams swerveParams;
     IPathPlanner pathPlanner;
+    static long lastStraightCall;
+    static ProfiledPIDController thetaStraightController;
 
     public SwerveDrivetrainModel(SwerveModule frontLeftModule,
             SwerveModule frontRightModule,
@@ -156,12 +160,32 @@ public class SwerveDrivetrainModel {
         return getPose().getRotation();
     }
 
+    public double getSlope(double adjustment) {
+        return pigeon.getPitch().getValueAsDouble() + adjustment;
+    }
+
+    public boolean isFacingForward(double offset) {
+        return Math.abs(getGyroHeading().getDegrees() % 360) < offset;
+    }
+
     public Command pathfindToPose(Pose2d endPose, PathConstraints pathConstraints, double endVelocity) {
         return pathPlanner.pathfindToPose(endPose, pathConstraints, endVelocity);
     }
 
     public Command followPath(PathPlannerPath path) {
         return pathPlanner.followPath(path);
+    }
+
+    public void driveStraightWithPower(double percent) {
+        if (System.currentTimeMillis() - lastStraightCall > 50) {
+            thetaStraightController = new ProfiledPIDController(10, 0, 0,
+                    new TrapezoidProfile.Constraints(Math.PI, Math.PI));
+        }
+        setModuleStates(
+                new SwerveInput(percent, 0,
+                        thetaStraightController.calculate(getPose().getRotation().getRadians() % 360, 0)),
+                false, true, false);
+        lastStraightCall = System.currentTimeMillis();
     }
 
     private SwerveInput handleStationary(SwerveInput input) {
