@@ -20,6 +20,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public SwerveSubsystem(SwerveDrivetrainModel dt) {
         this.dt = dt;
+        this.dt.setSubsystem(this);
         Timer.delay(1.0);
         for (SwerveModule mod : dt.getSwerveModules()) {
             mod.resetToAbsolute();

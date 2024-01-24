@@ -35,7 +35,7 @@ public class SwerveDrivetrainModel {
     public SwerveDrivetrainModel(SwerveModule frontLeftModule,
             SwerveModule frontRightModule,
             SwerveModule backLeftModule,
-            SwerveModule backRighModule, Pigeon2 pigeon, SwerveParams swerveParams, SwerveSubsystem swerve) {
+            SwerveModule backRighModule, Pigeon2 pigeon, SwerveParams swerveParams) {
         modules = (ArrayList<SwerveModule>) List.of(frontLeftModule, frontRightModule, backLeftModule, backRighModule);
         this.pigeon = pigeon;
         this.swerveParams = swerveParams;
@@ -58,6 +58,12 @@ public class SwerveDrivetrainModel {
         orientationChooser.setDefaultOption("Field Oriented", "Field Oriented");
         orientationChooser.addOption("Robot Oriented", "Robot Oriented");
         SmartDashboard.putData("Orientation Chooser", orientationChooser);
+    }
+
+    public void setSubsystem(SwerveSubsystem subsystem) {
+        pathPlanner.configureHolonomic(this::getPose, this::setKnownPose, this::getSpeeds,
+                (speeds) -> this.setModuleStates(speeds, false), swerveParams.getHolonomicPathFollowerConfig(),
+                () -> false, subsystem);
     }
 
     /** Updates the field relative position of the robot. */

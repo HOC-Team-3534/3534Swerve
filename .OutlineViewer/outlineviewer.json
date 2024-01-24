@@ -1,5 +1,19 @@
 {
+  "NetworkTables Settings": {
+    "mode": "Server"
+  },
   "Persistent Values": {
     "open": false
+  },
+  "transitory": {
+    "photonvision": {
+      "Arducam_OV2311_USB_Camera": {
+        "double[]##v_/photonvision/Arducam_OV2311_USB_Camera/targetPose": {
+          "open": true
+        },
+        "open": true
+      },
+      "open": true
+    }
   }
 }
