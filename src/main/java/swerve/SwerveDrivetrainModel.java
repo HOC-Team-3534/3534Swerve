@@ -1,8 +1,5 @@
 package swerve;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -26,7 +23,7 @@ import swerve.path.IPathPlanner;
 
 public class SwerveDrivetrainModel {
     public final static int NUM_MODULES = 4;
-    final ArrayList<SwerveModule> modules;
+    final SwerveModule[] modules = new SwerveModule[NUM_MODULES];
     final Pigeon2 pigeon;
     final SwerveDrivePoseEstimator poseEstimator;
     private static final SendableChooser<String> orientationChooser = new SendableChooser<>();
@@ -40,11 +37,16 @@ public class SwerveDrivetrainModel {
             SwerveModule frontRightModule,
             SwerveModule backLeftModule,
             SwerveModule backRighModule, Pigeon2 pigeon, SwerveParams swerveParams) {
-        modules = (ArrayList<SwerveModule>) List.of(frontLeftModule, frontRightModule, backLeftModule, backRighModule);
+        modules[0] = frontLeftModule;
+        modules[1] = frontRightModule;
+        modules[2] = backLeftModule;
+        modules[3] = backRighModule;
         this.pigeon = pigeon;
         this.swerveParams = swerveParams;
 
-        modules.forEach(module -> module.configController(swerveParams));
+        for (int i = 0; i < NUM_MODULES; i++) {
+            modules[i].configController(swerveParams);
+        }
 
         pathPlanner = new IPathPlanner() {
         };
@@ -118,13 +120,13 @@ public class SwerveDrivetrainModel {
         }
         SwerveDriveKinematics.desaturateWheelSpeeds(states, swerveParams.getMaxKinematics().vel);
         for (int i = 0; i < NUM_MODULES; i++) {
-            modules.get(i).setDesiredState(states[i], isOpenLoop);
+            modules[i].setDesiredState(states[i], isOpenLoop);
         }
     }
 
     public void setVoltageToZero() {
         for (int i = 0; i < NUM_MODULES; i++) {
-            modules.get(i).setDriveVoltageForCharacterization(0);
+            modules[i].setDriveVoltageForCharacterization(0);
         }
     }
 
@@ -139,7 +141,7 @@ public class SwerveDrivetrainModel {
     public SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] positions = new SwerveModulePosition[NUM_MODULES];
         for (int i = 0; i < NUM_MODULES; i++) {
-            positions[i] = modules.get(i).getPosition();
+            positions[i] = modules[i].getPosition();
         }
         return positions;
     }
@@ -147,7 +149,7 @@ public class SwerveDrivetrainModel {
     public SwerveModuleState[] getSwerveModuleStates() {
         SwerveModuleState[] states = new SwerveModuleState[NUM_MODULES];
         for (int i = 0; i < NUM_MODULES; i++) {
-            states[i] = modules.get(i).getState();
+            states[i] = modules[i].getState();
         }
         return states;
     }
@@ -205,6 +207,6 @@ public class SwerveDrivetrainModel {
     }
 
     public SwerveModule[] getSwerveModules() {
-        return (SwerveModule[]) modules.toArray();
+        return modules;
     }
 }
