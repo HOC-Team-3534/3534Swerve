@@ -33,6 +33,22 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
+     * Drives the robot in autonomous mode for balancing on the charge station using
+     * a percent output to drive onto it. The rotation of the robot aligns to zero
+     * and drives straight
+     * 
+     * @param percent
+     *            The percent the robot will drive straight forward
+     * @return The command that moves the robot in a straight path
+     */
+    public Command driveStraightAutonomous(double percent) {
+        var command = run(() -> dt.driveStraightWithPower(percent));
+
+        command.setName("Auton Drive Straight");
+        return command;
+    }
+
+    /**
      * 
      * @param quas_voltage
      *            the quasiastic voltage per second
