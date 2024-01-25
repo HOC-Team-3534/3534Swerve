@@ -10,7 +10,7 @@ public class Conversions {
      * @return Falcon Rotations
      */
     public static double steerDegreesToFalconRotations(double degrees, double gearRatio) {
-        return degrees / 360.0 / gearRatio;
+        return degrees / 360.0 * gearRatio;
     }
 
     /**

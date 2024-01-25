@@ -19,7 +19,7 @@ public class FalconSteerController implements ISteerController {
     private static final int ENCODER_RESET_ITERATIONS = 500;
     private static final double ENCODER_RESET_MAX_ANGULAR_VELOCITY = Math.toRadians(0.5);
     Rotation2d lastAngle;
-    private static final double SpeedNotChangeAngle = 0.05;
+    private static final double SpeedNotChangeAngle = 0.005;
     SwerveParams swerveParams;
 
     public FalconSteerController(TalonFX steerMotor, CANcoder absoluteEncoder,
@@ -91,8 +91,9 @@ public class FalconSteerController implements ISteerController {
 
     @Override
     public void setAngle(SwerveModuleState desiredState) {
-        Rotation2d angle = (Math.abs(desiredState.speedMetersPerSecond) <= SpeedNotChangeAngle) ? lastAngle
-                : desiredState.angle; // Prevent rotating module if speed is less then 1%. Prevents Jittering.
+        Rotation2d angle = (Math.abs(desiredState.speedMetersPerSecond)
+                / swerveParams.getMaxKinematics().vel <= SpeedNotChangeAngle) ? lastAngle
+                        : desiredState.angle; // Prevent rotating module if speed is less then 1%. Prevents Jittering.
         steerMotor.setControl(new PositionDutyCycle(Conversions.steerDegreesToFalconRotations(angle.getDegrees(),
                 swerveParams.getModuleConfiguration().angleGearRatio)));
         lastAngle = angle;
